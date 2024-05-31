@@ -17,7 +17,8 @@ public class Quoridor {
     private static final int SIZE = Board.getSize();
     private static final int MAX_WALLS = Board.getMaxWalls();
 
-    // declare private variable board
+    // declare variables
+    static Scanner sc = new Scanner(System.in);
     static Board board;
 
     public static void load(String filename) {
@@ -163,7 +164,123 @@ public class Quoridor {
         }
     }
 
+    /**
+     * menu method
+     * <p>
+     * Outputs the main menu
+     * @return char - The selection of the user
+     */
+    public static char menu() {
+        // declare variables
+        char sel;
+
+        // output main menu
+        System.out.println("\n  ___                   _     _            \n" +
+                " / _ \\ _   _  ___  _ __(_) __| | ___  _ __ \n" +
+                "| | | | | | |/ _ \\| '__| |/ _` |/ _ \\| '__|\n" +
+                "| |_| | |_| | (_) | |  | | (_| | (_) | |   \n" +
+                " \\__\\_\\\\__,_|\\___/|_|  |_|\\__,_|\\___/|_|");
+
+        System.out.println("\n---------- Welcome to QuoridorJ! ----------\n");
+
+        System.out.println(  "{     <N>ew Game                          }");
+        System.out.println(  "{     <L>oad Save                         }");
+        System.out.println(  "{     <H>elp                              }");
+        System.out.println(  "{     <Q>uit                              }");
+
+        System.out.println("\n-------------------------------------------\n");
+
+        // take user input
+        System.out.print("Enter a Selection > ");
+        sel = sc.nextLine().charAt(0);
+
+        return sel;
+    }
+
+    /**
+     * savesMenu method
+     * <p>
+     * Outputs the load game menu
+     * @return String - The save file chosen
+     */
+    public static String savesMenu() {
+        // declare variables
+        File folder = new File("./saves");
+        File[] listOfSaves = folder.listFiles();
+        List<String> saves = new ArrayList<String>();
+        String choice;
+
+        // loop over each file
+        if (listOfSaves != null) {
+            for (File save : listOfSaves) {
+                if (save.isFile()) {
+                    saves.add(save.getName().substring(0, save.getName().length() - 4)); // add to ArrayList
+                }
+            }
+        }
+
+        // keep looping until we get a valid choice
+        do {
+            // output save menu
+            System.out.println("\n  ___                   _     _            \n" +
+                    " / _ \\ _   _  ___  _ __(_) __| | ___  _ __ \n" +
+                    "| | | | | | |/ _ \\| '__| |/ _` |/ _ \\| '__|\n" +
+                    "| |_| | |_| | (_) | |  | | (_| | (_) | |   \n" +
+                    " \\__\\_\\\\__,_|\\___/|_|  |_|\\__,_|\\___/|_|");
+
+            System.out.println("\n--- Which Save Would You Like to Load? ----\n");
+
+            // loop over each save and output the name
+            for (String s : saves) {
+                System.out.print("{     ");
+                System.out.printf("%-36s", "<" + s + ">");
+                System.out.println("}");
+            }
+
+            System.out.println("\n-------------------------------------------\n");
+
+            // take user input and return it if valid
+            System.out.print("Enter a selection > ");
+
+            choice = sc.nextLine();
+
+            if (!saves.contains(choice)) {
+                System.out.println("*ERR: Please select a valid file**\n");
+                savesMenu();
+            }
+        } while (!saves.contains(choice));
+
+        // return the filename
+        return "./saves/" + choice + ".txt";
+    }
+
+
+    /**
+     * main method
+     * <p>
+     * Main driver code for the entire game
+     */
     public static void main(String[] args) {
-        load("./saves/example.txt");
+        // declare variables
+        boolean quit = false;
+
+        // switch statement for menu selection
+        switch (menu()) {
+            case 'N':
+                System.out.println("user selected new game");
+                // board = new Board(true);
+                break;
+            case 'L':
+                System.out.println("user selected load game");
+                // load(savesMenu());
+                break;
+            case 'H':
+                System.out.println("user selected help");
+                break;
+            case 'Q':
+                System.out.println("user selected quit");
+                // quit = true;
+                break;
+        }
     }
 }

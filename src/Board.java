@@ -1,3 +1,5 @@
+import com.sun.xml.internal.ws.api.model.wsdl.WSDLOutput;
+
 import java.util.*;
 
 /**
@@ -100,6 +102,89 @@ public class Board {
         this.wallsPlayer[1] = p2WallsPlaced;
 
         this.walls = new HashSet<Wall>(walls);
+    }
+
+    /**
+     * out method
+     * <p>
+     * Prints the board to the console
+     */
+    public void out() {
+        // declare constants
+        final Map<String, String> markings = new HashMap<String, String>() {{
+            put("columns", "   a   b   c   d   e   f   g   h   i");
+            put("horiz-border", " –––––––––––––––––––––––––––––––––––––");
+        }};
+
+        // declare variables TODO: make constants for margins and spacing
+        char[][] display = new char[SIZE * 2 - 1][SIZE * 4 - 3];
+        int row = 9;
+
+        // fill the array with whitespaces
+        for (int x=0; x<SIZE * 4 - 3; x++) {
+            for (int y=0; y<SIZE * 2 - 1; y++) {
+                display[y][x] = ' ';
+            }
+        }
+
+        // loop over the squares and set the display each board space
+        for (int x=0; x<SIZE; x++) {
+            for (int y=0; y<SIZE; y++) {
+                switch (squares[x][y]) {
+                    case 0:
+                        display[y * 2][x * 4] = '.';
+                        break;
+                    case 1:
+                        display[y * 2][x * 4] = 'O';
+                        break;
+                    case 2:
+                        display[y * 2][x * 4] = 'X';
+                        break;
+                }
+            }
+        }
+
+        // loop over each wall and set the display on the applicable squares
+        for (Wall w: walls) {
+            if (w.isVertical()) {
+                for (int i=0; i<3; i++) {
+                    display[(w.getY() - 1) * 2 + i][w.getX() * 4 + 2] = '|';
+                }
+            }
+            else {
+                for (int i=0; i<5; i++) {
+                    display[(w.getY() - 1) * 2 + 1][w.getX() * 4 + i] = '–';
+                }
+            }
+        }
+
+        // output the column labels and the border
+        System.out.println(markings.get("columns"));
+        System.out.println(markings.get("horiz-border"));
+
+        // loop through the row and output each row
+        for (int i=SIZE * 2 - 2; i>=0; i--) {
+            // output the current row if it is not a blank square
+            if (i % 2 == 0) System.out.print(row);
+            else System.out.print(" ");
+            // output the border
+            System.out.print("| ");
+
+            // output the current square
+            for (char c : display[i]) {
+                System.out.print(c);
+            }
+
+            // output the border
+            System.out.print(" |");
+            // output the current row and decrement the row
+            if (i % 2 == 0) System.out.print(+ row--);
+            System.out.print('\n');
+        }
+
+        // output the column labels and the border
+        System.out.println(markings.get("horiz-border"));
+        System.out.println(markings.get("columns"));
     }
 
     /**
