@@ -1,7 +1,7 @@
 O f2: Human
 X e8: Computer
 
-12 {O:6, X:6}:
+12 {O: 6 , X: 6 }:
 | e8: O
 – a7: O
 – d7: O

@@ -13,27 +13,27 @@ public class Pawn {
     private static final int[] P2_START = {4, 8};
 
     // declare local variables for pawn id, human status, and position
-    private int id;
-    private boolean human;
     private int[] pos = new int[2];
+    private final int id;
+    private final boolean human;
 
     /**
      * Pawn method
      * <p>
      * Constructor for Pawn
      *
+     * @param id The id of the player (1 or 2)
      * @param human True if the pawn is human, false if the pawn is computer
      */
     public Pawn(int id, boolean human) {
+        this.id = id;
         this.human = human;
 
         switch (id) {
             case 1:
-                this.id = 1;
                 pos = P1_START;
                 break;
             case 2:
-                this.id=2;
                 pos = P2_START;
                 break;
         }
@@ -42,6 +42,31 @@ public class Pawn {
             // if the pawn is a computer, initialize a new computer object
             // this.computer = new Computer();
         }
+    }
+
+    /**
+     * Pawn method
+     * <p>
+     * Constructor for Pawn (with a known position)
+     *
+     * @param pos The position of the pawn
+     * @param id The id of the player (1 or 2)
+     * @param human True if the pawn is human, false if the pawn is computer
+     */
+    public Pawn (int[] pos, int id, boolean human) {
+        this.pos = new int[] {pos[0], pos[1]};
+        this.id = id;
+        this.human = human;
+    }
+
+    /**
+     * copy method
+     * <p>
+     * Returns a copy of the current pawn
+     * @return Pawn - the copy
+     */
+    public Pawn copy() {
+        return new Pawn(new int[] {pos[0], pos[1]}, id, human);
     }
 
     /**
