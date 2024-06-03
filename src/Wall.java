@@ -75,4 +75,34 @@ public class Wall {
     public int getY() {
         return getPos()[1];
     }
+
+    /**
+     * isBlocking method
+     * <p>
+     * Checks if the current wall is blocking a path from one square
+     *
+     * @param pos The position to start from
+     * @param dir The direction to check
+     * @return boolean - Whether the wall is blocking the direction
+     */
+    public boolean isBlocking(int[] pos, char dir) {
+        // declare variables
+        boolean blocking = false;
+
+        if (vertical) {
+            if (pos[0] == this.pos[0]) {
+                if (pos[1] == this.pos[1] || pos[1] == this.pos[1] - 1 && dir == 'E') blocking = true;
+            } else if (pos[0] == this.pos[0] + 1) {
+                if (pos[1] == this.pos[1] || pos[1] == this.pos[1] - 1 && dir == 'W') blocking = true;
+            }
+        } else {
+            if (pos[1] == this.pos[1]) {
+                if (pos[0] == this.pos[0] || pos[0] == this.pos[0] + 1 && dir == 'S') blocking = true;
+            } else if (pos[1] == this.pos[1] - 1) {
+                if (pos[0] == this.pos[0] || pos[0] == this.pos[0] + 1 && dir == 'N') blocking = true;
+            }
+        }
+
+        return blocking;
+    }
 }

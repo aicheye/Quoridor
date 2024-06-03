@@ -35,11 +35,11 @@ public class Board {
     }
 
     // declare variables
-    private int[][] squares = new int[9][9];
+    private final int[][] squares = new int[9][9];
     private HashSet<Wall> walls = new HashSet<Wall>();
-    private Pawn p1;
-    private Pawn p2;
-    private int[] wallsPlayer = new int[2];
+    private final Pawn p1;
+    private final Pawn p2;
+    private final int[] wallsPlayer = new int[2];
     private int current = -1;
 
     /**
@@ -245,7 +245,7 @@ public class Board {
      * @return boolean - If the placement is valid
      */
     public boolean validateWallPlace(int[] pos, boolean vert, int owner) {
-        // check if the owner has any walls left and call validateWallPlace
+        // check if the owner has any walls left and call validateWallPos
         return wallsPlayer[owner - 1] < MAX_WALLS && validateWallPos(new Wall(pos, vert, owner), walls);
     }
 
@@ -312,5 +312,36 @@ public class Board {
         }
 
         return valid;
+    }
+
+    /**
+     * getValidPawnMoves method
+     * <p>
+     * Gets all valid pawn moves
+     *
+     * @param self The pawn to check
+     * @return Set<List < Integer>>> - The valid squares a pawn can move to
+     */
+    public Set<List<Integer>> getValidPawnMoves(Pawn self) {
+        // declare variable
+        Pawn other;
+        Set<List<Integer>> moves = new HashSet<List<Integer>>();
+        Set<Character> dirs = new HashSet<Character>() {{
+            add('N');
+            add('E');
+            add('S');
+            add('W');
+        }};
+
+        // set the other pawn
+        if (self.getId() == 1) other = p2;
+        else other = p1;
+
+        // check each direction
+        for (char d : dirs) {
+            // check if it is blocked by a wall
+        }
+
+        return moves;
     }
 }
