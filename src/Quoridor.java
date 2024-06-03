@@ -222,12 +222,6 @@ public class Quoridor {
         // keep looping until we get a valid choice
         do {
             // output save menu
-            System.out.println("\n  ___                   _     _            \n" +
-                    " / _ \\ _   _  ___  _ __(_) __| | ___  _ __ \n" +
-                    "| | | | | | |/ _ \\| '__| |/ _` |/ _ \\| '__|\n" +
-                    "| |_| | |_| | (_) | |  | | (_| | (_) | |   \n" +
-                    " \\__\\_\\\\__,_|\\___/|_|  |_|\\__,_|\\___/|_|");
-
             System.out.println("\n--- Which Save Would You Like to Load? ----\n");
 
             // loop over each save and output the name
