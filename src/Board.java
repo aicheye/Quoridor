@@ -1,5 +1,3 @@
-import com.sun.xml.internal.ws.api.model.wsdl.WSDLOutput;
-
 import java.util.*;
 
 /**
@@ -315,10 +313,64 @@ public class Board {
     }
 
     /**
+     * isAnyWallBlocking method
+     * <p>
+     * Checks if any wall is blocking the desired move
+     *
+     * @param pos The start position
+     * @param dir The direction to travel in
+     * @return boolean - Whether a wall is blocking the direction
+     */
+    public boolean isAnyWallBlocking(int[] pos, char dir) {
+        // declare variables
+        boolean blocking = false;
+
+        // iterate over all walls
+        for (Wall w : walls) if (w.isBlocking(pos, dir)) blocking = true;
+
+        return blocking;
+    }
+
+    /**
+     * calcNewPos method
+     * <p>
+     * Calculates a position given an old position and a direction
+     *
+     * @param pos The old position
+     * @param dir The direction
+     * @return int[] - The calculated position
+     */
+    public static int[] calcNewPos(int[] pos, char dir) {
+        // new position
+        int[] newPos = new int[2];
+
+        // switch-case using the direction
+        switch (dir) {
+            case 'N':
+                newPos[0] = pos[0];
+                newPos[1] = pos[1] + 1;
+                break;
+            case 'E':
+                newPos[0] = pos[0] + 1;
+                newPos[1] = pos[1];
+                break;
+            case 'S':
+                newPos[0] = pos[0];
+                newPos[1] = pos[1] - 1;
+                break;
+            case 'W':
+                newPos[0] = pos[0] - 1;
+                newPos[1] = pos[1];
+                break;
+        }
+
+        return newPos;
+    }
+
+    /**
      * getValidPawnMoves method
      * <p>
      * Gets all valid pawn moves
-     *
      * @param self The pawn to check
      * @return Set<List < Integer>>> - The valid squares a pawn can move to
      */
@@ -332,6 +384,10 @@ public class Board {
             add('S');
             add('W');
         }};
+        boolean blocked = false;
+        Set<List<Integer>> jumps = new HashSet<List<Integer>>();
+        List<Integer> newPos;
+        char[] jumpChecks = new char[2];
 
         // set the other pawn
         if (self.getId() == 1) other = p2;
@@ -339,7 +395,28 @@ public class Board {
 
         // check each direction
         for (char d : dirs) {
-            // check if it is blocked by a wall
+            // check if it is blocked
+            if (isAnyWallBlocking(self.getPos(), d)) dirs.remove(d);
+            else {
+                // check if the other pawn is at the same position
+                if (Arrays.equals(other.getPos(), self.getPos())) {
+                    dirs.remove(d); // remove the direction from the valid directions
+                    // check if it is possible to jump across
+                    if (!isAnyWallBlocking(other.getPos(), d)) {
+                        // calculate the new position
+                        newPos = new ArrayList<Integer>();
+                        newPos.add(calcNewPos(other.getPos(), d)[0]);
+                        newPos.add(calcNewPos(other.getPos(), d)[1]);
+
+                        // add to jumps
+                        jumps.add(newPos);
+                    } else {
+                        // new jumps to check
+                        switch (d) {
+                        }
+                    }
+                }
+            }
         }
 
         return moves;

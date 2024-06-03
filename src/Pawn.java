@@ -4,7 +4,6 @@ import java.util.*;
  * Pawn class
  * <p>
  * Represents a pawn in the game of Quoridor.
- *
  * @author Sean Yang
  * @version 30/05/2024
  */
@@ -23,7 +22,6 @@ public class Pawn {
      * Pawn method
      * <p>
      * Constructor for Pawn
-     *
      * @param id The id of the player (1 or 2)
      * @param human True if the pawn is human, false if the pawn is computer
      */
@@ -75,7 +73,6 @@ public class Pawn {
      * getId method
      * <p>
      * Gets the id of the pawn: either 1 or 2
-     *
      * @return int - The id of the pawn
      */
     public int getId() {
@@ -86,7 +83,6 @@ public class Pawn {
      * isHuman method
      * <p>
      * Returns if the pawn is owned by the human player
-     *
      * @return boolean - True if the pawn is human
      */
     public boolean isHuman() {
@@ -97,7 +93,6 @@ public class Pawn {
      * getPos method
      * <p>
      * Returns the position of the pawn
-     *
      * @return int[] - The position of the pawn
      */
     public int[] getPos() {
@@ -128,7 +123,6 @@ public class Pawn {
      * setPos method
      * <p>
      * Setter for pawn position - DO NOT USE IN GAME CODE
-     *
      * @param newPos The new position
      */
     public void setPos(int[] newPos) {

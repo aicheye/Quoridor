@@ -15,7 +15,6 @@ public class Wall {
      * Wall method
      * <p>
      * Constructor for Wall
-     *
      * @param pos      The position of the wall
      * @param vertical True if the wall is vertical, false if the wall is horizontal
      * @param owner    The id of the player who owns the wall
@@ -80,7 +79,6 @@ public class Wall {
      * isBlocking method
      * <p>
      * Checks if the current wall is blocking a path from one square
-     *
      * @param pos The position to start from
      * @param dir The direction to check
      * @return boolean - Whether the wall is blocking the direction
