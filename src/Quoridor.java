@@ -9,11 +9,11 @@ import java.io.*;
  * @version 30/05/2024
  */
 public class Quoridor {
-    private static final Map<String, String> REGEX_STRINGS = new HashMap<String, String>()
-    {{put("player", "^[OX]\\s[a-i][1-9]:\\s((Human)|(Computer))$");
-            put("walls", "^([1-9]|(1[0-9])|(20))\\s\\{O:\\s([1-9]|(10]))\\s,\\sX:\\s([1-9]|(10]))\\s}:$");
-            put("wall", "^[|–]\\s[a-i][1-9]:\\s[OX]$");
-        }};
+    private static final Map<String, String> REGEX_STRINGS = new HashMap<String, String>() {{
+        put("player", "^[OX]\\s[a-i][1-9]:\\s((Human)|(Computer))$");
+        put("walls", "^([1-9]|(1[0-9])|(20))\\s\\{O:\\s([1-9]|(10]))\\s,\\sX:\\s([1-9]|(10]))\\s}:$");
+        put("wall", "^[|–]\\s[a-i][1-9]:\\s[OX]$");
+    }};
     private static final int SIZE = Board.getSize();
     private static final int MAX_WALLS = Board.getMaxWalls();
 
@@ -21,6 +21,147 @@ public class Quoridor {
     static Scanner sc = new Scanner(System.in);
     static Board board;
 
+    /**
+     * menu method
+     * <p>
+     * Outputs the main menu
+     * @return char - The selection of the user
+     */
+    public static char mainMenu() {
+        // declare variables
+        char sel;
+        Set<Character> options = new HashSet<Character>() {{
+            add('N');
+            add('L');
+            add('H');
+            add('Q');
+        }};
+
+        System.out.println("\n---------- Welcome to QuoridorJ! ----------\n");
+
+        System.out.println(  "{     <N>ew Game                          }");
+        System.out.println(  "{     <L>oad Save                         }");
+        System.out.println(  "{     <H>elp                              }");
+        System.out.println(  "{     <Q>uit                              }");
+
+        System.out.println("\n-------------------------------------------\n");
+
+        // keep looping until we get a valid choice
+        do {
+            // take user input
+            System.out.print("Enter a Selection > ");
+            sel = Character.toUpperCase(sc.nextLine().charAt(0));
+
+            // check if selection is invalid
+            if (!options.contains(Character.toUpperCase(sel))) {
+                System.out.println("**ERR: Please select a valid option.**\n");
+            }
+        } while (!options.contains(Character.toUpperCase(sel)));
+
+        return sel;
+    }
+
+    /**
+     * savesMenu method
+     * <p>
+     * Outputs the load game menu
+     * @return String - The save file chosen
+     */
+    public static String savesMenu() {
+        // declare variables
+        File folder = new File("./saves");
+        File[] listOfSaves = folder.listFiles();
+        List<String> saves = new ArrayList<String>();
+        String choice;
+        String file;
+
+        // loop over each file
+        if (listOfSaves != null) {
+            for (File save : listOfSaves) {
+                if (save.isFile()) {
+                    saves.add(save.getName().substring(0, save.getName().length() - 4)); // add to ArrayList
+                }
+            }
+        }
+
+        // output save menu
+        System.out.println("\n--- Which Save Would You Like to Load? ----\n");
+
+        // loop over each save and output the name
+        for (String s : saves) {
+            System.out.print("{     ");
+            System.out.printf("%-36s", "<" + s + ">");
+            System.out.println("}");
+        }
+
+        System.out.println("\n-------------------------------------------\n");
+
+        // keep looping until we get a valid choice
+        do {
+            // take user input and return it if valid
+            System.out.print("Enter a selection (or Q to quit)> ");
+            choice = sc.nextLine();
+
+            // check if it is a valid file
+            if (!saves.contains(choice) && !(choice.equals("Q") || choice.equals("q"))) {
+                System.out.println("*ERR: Please select a valid file**\n");
+            }
+        } while (!saves.contains(choice) && !(choice.equals("Q") || choice.equals("q")));
+
+        // return the filename
+        if (!(choice.equals("Q") || choice.equals("q"))) file = "./saves/" + choice + ".txt";
+        else file = "Quit";
+
+        return file;
+    }
+
+    /**
+     * turnMenu method
+     * <p>
+     * Menu for selecting a turn option
+     * @return the choice of the user
+     */
+    public static char turnMenu() {
+        // declare variables
+        char sel;
+        Set<Character> options = new HashSet<Character>() {{
+            add('M');
+            add('P');
+            add('F');
+            add('S');
+        }};
+
+        // output menu
+        System.out.println("\n---------- Make a Selection -----------\n");
+
+        System.out.println(  "{     <M>ove your pawn                }");
+        System.out.println(  "{     <P>lace a wall                  }");
+        System.out.println(  "{     <F>orfeit                       }");
+        System.out.println(  "{     <S>ve game and exit             }");
+
+        System.out.println("\n---------------------------------------\n");
+
+        // keep looping until we get a valid choice
+        do {
+            // take user input
+            System.out.print("Enter a Selection > ");
+            sel = Character.toUpperCase(sc.nextLine().charAt(0));
+
+            // check if selection is invalid
+            if (!options.contains(Character.toUpperCase(sel))) {
+                System.out.println("**ERR: Please select a valid option.**\n");
+            }
+        } while (!options.contains(Character.toUpperCase(sel)));
+
+        return sel;
+    }
+
+    /**
+     * load method
+     * <p>
+     * Loads a board from a save file
+     * @param filename The file to load
+     */
     public static void load(String filename) {
         // declare variables
         boolean valid = true;
@@ -33,6 +174,7 @@ public class Quoridor {
         int totWalls = 0, p1Walls = 11, p2Walls = 11, wallOwner;
         boolean wallVertical;
         HashSet<Wall> wallSet = new HashSet<Wall>();
+        int current = -1;
 
         // declare BufferedReader object
         BufferedReader br;
@@ -149,105 +291,92 @@ public class Quoridor {
             // check if the number of walls placed matches
             if (p1Walls != 0 || p2Walls != 0) valid = false;
 
+            // get the current player
+            br.readLine();
+            line = br.readLine();
+            if (line.matches("^Current Move: Player [12]$")) current = Integer.parseInt(String.valueOf(line.charAt(21)));
+            else valid = false;
+
+
             // initialize the board if the load is valid
             if (valid && p1 != null && p2 != null && wallSet.size() > 0) {
-                board = new Board(p1, p2, wallSet);
-                System.out.println("Loaded!");
+                board = new Board(p1, p2, wallSet, current);
+                System.out.println("File loaded successfully.\n");
             }
             else {
-                System.out.println("**ERR: Invalid save file**");
+                System.out.println("**ERR: Invalid save file**\n");
             }
         }
 
         catch (IOException e) {
-            System.out.println("**ERR: File read error (does this file exist?)**");
+            System.out.println("**ERR: File read error (does this file exist?)**\n");
         }
     }
 
     /**
-     * menu method
+     * gameLoop method
      * <p>
-     * Outputs the main menu
-     * @return char - The selection of the user
+     * Handles the main game loop
+     * @return int - The winner of the game
      */
-    public static char menu() {
-        // declare variables
-        char sel;
+    public static int gameLoop() {
+        int winner = -1;
+        boolean gameEnd = false;
 
-        // output main menu
-        System.out.println("\n  ___                   _     _            \n" +
-                " / _ \\ _   _  ___  _ __(_) __| | ___  _ __ \n" +
-                "| | | | | | |/ _ \\| '__| |/ _` |/ _ \\| '__|\n" +
-                "| |_| | |_| | (_) | |  | | (_| | (_) | |   \n" +
-                " \\__\\_\\\\__,_|\\___/|_|  |_|\\__,_|\\___/|_|");
+        // loops until the game ends
+        while (!gameEnd) {
+            // make the next turn
+            turn(board.getCurrentPlayer());
 
-        System.out.println("\n---------- Welcome to QuoridorJ! ----------\n");
+            // return the current winner if the game ends
+            if ((winner = checkWinner()) != -1) gameEnd = true;
+        }
 
-        System.out.println(  "{     <N>ew Game                          }");
-        System.out.println(  "{     <L>oad Save                         }");
-        System.out.println(  "{     <H>elp                              }");
-        System.out.println(  "{     <Q>uit                              }");
-
-        System.out.println("\n-------------------------------------------\n");
-
-        // take user input
-        System.out.print("Enter a Selection > ");
-        sel = sc.nextLine().charAt(0);
-
-        return sel;
+        return winner;
     }
 
     /**
-     * savesMenu method
+     * turn method
      * <p>
-     * Outputs the load game menu
-     * @return String - The save file chosen
+     * Handles each turn
+     * @param current The current player
      */
-    public static String savesMenu() {
-        // declare variables
-        File folder = new File("./saves");
-        File[] listOfSaves = folder.listFiles();
-        List<String> saves = new ArrayList<String>();
-        String choice;
+    public static void turn(int current) {
+        board.out();
 
-        // loop over each file
-        if (listOfSaves != null) {
-            for (File save : listOfSaves) {
-                if (save.isFile()) {
-                    saves.add(save.getName().substring(0, save.getName().length() - 4)); // add to ArrayList
-                }
-            }
+        switch (turnMenu()) {
+            case 'M':
+                System.out.println("user selected to move the pawn");
+                break;
+            case 'P':
+                System.out.println("user selected to place a wall");
+                break;
+            case 'S':
+                System.out.println("user selected to save the game");
+                break;
+            case 'F':
+                System.out.println("user selected to forfeit");
+                break;
+            default:
+                System.out.println("*ERR: Please select a valid option.*\n");
+                break;
         }
-
-        // keep looping until we get a valid choice
-        do {
-            // output save menu
-            System.out.println("\n--- Which Save Would You Like to Load? ----\n");
-
-            // loop over each save and output the name
-            for (String s : saves) {
-                System.out.print("{     ");
-                System.out.printf("%-36s", "<" + s + ">");
-                System.out.println("}");
-            }
-
-            System.out.println("\n-------------------------------------------\n");
-
-            // take user input and return it if valid
-            System.out.print("Enter a selection > ");
-
-            choice = sc.nextLine();
-
-            if (!saves.contains(choice)) {
-                System.out.println("*ERR: Please select a valid file**\n");
-                savesMenu();
-            }
-        } while (!saves.contains(choice));
-
-        // return the filename
-        return "./saves/" + choice + ".txt";
     }
 
+    /**
+     * checkWinner method
+     * <p>
+     * Checks if the game is over
+     * @return int - The winner of the game (-1 if the game is not over)
+     */
+    public static int checkWinner() {
+        int winner = -1;
+
+        if (board.getP1().getY() == SIZE - 1) winner = 1;
+        else if (board.getP2().getY() == 0) winner = 2;
+
+        return winner;
+    }
 
     /**
      * main method
@@ -257,24 +386,40 @@ public class Quoridor {
     public static void main(String[] args) {
         // declare variables
         boolean quit = false;
+        boolean selecting = true;
+        int winner;
 
-        // switch statement for menu selection
-        switch (menu()) {
-            case 'N':
-                System.out.println("user selected new game");
-                // board = new Board(true);
-                break;
-            case 'L':
-                System.out.println("user selected load game");
-                // load(savesMenu());
-                break;
-            case 'H':
-                System.out.println("user selected help");
-                break;
-            case 'Q':
-                System.out.println("user selected quit");
-                // quit = true;
-                break;
+        // output main menu
+        System.out.println("\n  ___                   _     _            \n" +
+                " / _ \\ _   _  ___  _ __(_) __| | ___  _ __ \n" +
+                "| | | | | | |/ _ \\| '__| |/ _` |/ _ \\| '__|\n" +
+                "| |_| | |_| | (_) | |  | | (_| | (_) | |   \n" +
+                " \\__\\_\\\\__,_|\\___/|_|  |_|\\__,_|\\___/|_|");
+
+        while (!quit) {
+            // switch statement for menu selection
+            switch (mainMenu()) {
+                case 'N':
+                    System.out.println("user selected new game");
+                    board = new Board(true);
+                    break;
+                case 'L':
+                    System.out.println("user selected load game");
+                    load(savesMenu());
+                    break;
+                case 'H':
+                    System.out.println("user selected help");
+                    break;
+                case 'Q':
+                    System.out.println("user selected quit");
+                    quit = true;
+                    break;
+            }
+
+            if (!quit) {
+                // begin the game loop
+                winner = gameLoop();
+            }
         }
     }
 }

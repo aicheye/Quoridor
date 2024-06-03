@@ -40,6 +40,37 @@ public class Board {
     private Pawn p1;
     private Pawn p2;
     private int[] wallsPlayer = new int[2];
+    private int current = -1;
+
+    /**
+     * getP1
+     * <p>
+     * Getter for the first pawn
+     * @return pawn - The pawn object
+     */
+    public Pawn getP1() {
+        return p1;
+    }
+
+    /**
+     * getP2
+     * <p>
+     * Getter for the second pawn
+     * @return pawn - The pawn object
+     */
+    public Pawn getP2() {
+        return p2;
+    }
+
+    /**
+     * getCurrentPlayer
+     * <p>
+     * Getter for the current player
+     * @return int - The current player (1 or 2)
+     */
+    public int getCurrentPlayer() {
+        return current;
+    }
 
     /**
      * Board constructor
@@ -66,6 +97,9 @@ public class Board {
         // set pawn positions
         squares[p1.getX()][p1.getY()] = 1;
         squares[p2.getX()][p2.getY()] = 2;
+
+        // set current player
+        current = 1;
     }
 
     /**
@@ -75,8 +109,9 @@ public class Board {
      * @param p1 Player 1's pawn
      * @param p2 Player 2's pawn
      * @param walls The list of walls on the board
+     * @param current The current player
      */
-    public Board(Pawn p1, Pawn p2, HashSet<Wall> walls) {
+    public Board(Pawn p1, Pawn p2, HashSet<Wall> walls, int current) {
         // declare variables
         int p1WallsPlaced = 0;
         int p2WallsPlaced = 0;
@@ -102,6 +137,8 @@ public class Board {
         this.wallsPlayer[1] = p2WallsPlaced;
 
         this.walls = new HashSet<Wall>(walls);
+
+        this.current = current;
     }
 
     /**

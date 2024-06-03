@@ -14,3 +14,5 @@ X e8: Computer
 – f4: X
 | c3: X
 | d2: X
+
+Current Move: Player 1
