@@ -193,6 +193,11 @@ public class Board {
             }
         }
 
+        // loop over each valid pawn move for player 1 set the display for each square
+        for (List<Integer> pos : calcValidPawnMoves(getP1())) {
+            display[pos.get(1) * 2][pos.get(0) * 4] = '~';
+        }
+
         // output the column labels and the border
         System.out.println(markings.get("columns"));
         System.out.println(markings.get("horiz-border"));
@@ -316,7 +321,6 @@ public class Board {
      * isAnyWallBlocking method
      * <p>
      * Checks if any wall is blocking the desired move
-     *
      * @param pos The start position
      * @param dir The direction to travel in
      * @return boolean - Whether a wall is blocking the direction
@@ -368,13 +372,13 @@ public class Board {
     }
 
     /**
-     * getValidPawnMoves method
+     * calcValidPawnMoves method
      * <p>
-     * Gets all valid pawn moves
+     * Calculates all valid pawn moves
      * @param self The pawn to check
      * @return Set<List < Integer>>> - The valid squares a pawn can move to
      */
-    public Set<List<Integer>> getValidPawnMoves(Pawn self) {
+    public Set<List<Integer>> calcValidPawnMoves(Pawn self) {
         // declare variable
         Pawn other;
         Set<List<Integer>> moves = new HashSet<List<Integer>>();
@@ -389,30 +393,65 @@ public class Board {
         List<Integer> newPos;
         char[] jumpChecks = new char[2];
 
-        // set the other pawn
+        // set the pawns
         if (self.getId() == 1) other = p2;
         else other = p1;
 
         // check each direction
-        for (char d : dirs) {
-            // check if it is blocked
-            if (isAnyWallBlocking(self.getPos(), d)) dirs.remove(d);
-            else {
+        for (char dir : dirs) {
+            if (!isAnyWallBlocking(self.getPos(), dir)) {
+                // check if the new direction is not occupied by a pawn, and that it is a valid position
+                if (!Arrays.equals(calcNewPos(self.getPos(), dir), other.getPos()) &&
+                        validatePawnPos(calcNewPos(self.getPos(), dir))) {
+                    // calculate the new position
+                    newPos = new ArrayList<Integer>();
+                    newPos.add(calcNewPos(self.getPos(), dir)[0]);
+                    newPos.add(calcNewPos(self.getPos(), dir)[1]);
+
+                    // add to moves
+                    moves.add(newPos);
+                }
+
                 // check if the other pawn is at the same position
-                if (Arrays.equals(other.getPos(), self.getPos())) {
-                    dirs.remove(d); // remove the direction from the valid directions
-                    // check if it is possible to jump across
-                    if (!isAnyWallBlocking(other.getPos(), d)) {
+                else if (Arrays.equals(calcNewPos(self.getPos(), dir), other.getPos())) {
+                    // check if there are no walls blocking the direction and it is a valid position
+                    if (!isAnyWallBlocking(other.getPos(), dir) &&
+                            validatePawnPos(calcNewPos(other.getPos(), dir))) {
                         // calculate the new position
                         newPos = new ArrayList<Integer>();
-                        newPos.add(calcNewPos(other.getPos(), d)[0]);
-                        newPos.add(calcNewPos(other.getPos(), d)[1]);
+                        newPos.add(calcNewPos(other.getPos(), dir)[0]);
+                        newPos.add(calcNewPos(other.getPos(), dir)[1]);
 
-                        // add to jumps
-                        jumps.add(newPos);
+                        // add to moves
+                        moves.add(newPos);
                     } else {
                         // new jumps to check
-                        switch (d) {
+                        switch (dir) {
+                            case 'N':
+                            case 'S':
+                                jumpChecks[0] = 'E';
+                                jumpChecks[1] = 'W';
+                                break;
+                            case 'E':
+                            case 'W':
+                                jumpChecks[0] = 'N';
+                                jumpChecks[1] = 'S';
+                                break;
+                        }
+
+                        //iterate over jump checks
+                        for (char jumpDir : jumpChecks) {
+                            // check if there are no walls blocking the direction and it is a valid position
+                            if (!isAnyWallBlocking(other.getPos(), jumpDir) &&
+                                    validatePawnPos(calcNewPos(other.getPos(), dir))) {
+                                // calculate the new position
+                                newPos = new ArrayList<Integer>();
+                                newPos.add(calcNewPos(other.getPos(), jumpDir)[0]);
+                                newPos.add(calcNewPos(other.getPos(), jumpDir)[1]);
+
+                                // add to jumps
+                                moves.add(newPos);
+                            }
                         }
                     }
                 }

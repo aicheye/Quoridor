@@ -29,7 +29,6 @@ public class Quoridor {
      */
     public static char mainMenu() {
         // declare variables
-        char sel;
         Set<Character> options = new HashSet<Character>() {{
             add('N');
             add('L');
@@ -46,7 +45,12 @@ public class Quoridor {
 
         System.out.println("\n-------------------------------------------\n");
 
-        // keep looping until we get a valid choice
+        return validateInput(options);
+    }
+
+    private static char validateInput(Set<Character> options) {
+        char sel;
+
         do {
             // take user input
             System.out.print("Enter a Selection > ");
@@ -65,13 +69,17 @@ public class Quoridor {
      * savesMenu method
      * <p>
      * Outputs the load game menu
+     * @param showFiles Whether to show the files again
      * @return String - The save file chosen
      */
-    public static String savesMenu() {
+    public static String savesMenu(boolean showFiles) {
         // declare variables
         File folder = new File("./saves");
         File[] listOfSaves = folder.listFiles();
-        List<String> saves = new ArrayList<String>();
+        List<String> saves = new ArrayList<String>() {{
+            add("Q");
+            add("q");
+        }};
         String choice;
         String file;
 
@@ -84,17 +92,20 @@ public class Quoridor {
             }
         }
 
-        // output save menu
-        System.out.println("\n--- Which Save Would You Like to Load? ----\n");
 
-        // loop over each save and output the name
-        for (String s : saves) {
-            System.out.print("{     ");
-            System.out.printf("%-36s", "<" + s + ">");
-            System.out.println("}");
+        if (showFiles) {
+            // output save menu
+            System.out.println("\n--- Which Save Would You Like to Load? ----\n");
+
+            // loop over each save and output the name
+            for (String s : saves) {
+                System.out.print("{     ");
+                System.out.printf("%-36s", "<" + s + ">");
+                System.out.println("}");
+            }
+
+            System.out.println("\n-------------------------------------------\n");
         }
-
-        System.out.println("\n-------------------------------------------\n");
 
         // keep looping until we get a valid choice
         do {
@@ -103,10 +114,10 @@ public class Quoridor {
             choice = sc.nextLine();
 
             // check if it is a valid file
-            if (!saves.contains(choice) && !(choice.equals("Q") || choice.equals("q"))) {
-                System.out.println("*ERR: Please select a valid file**\n");
+            if (!saves.contains(choice)) {
+                System.out.println("*ERR: Please select a valid file (or Q to quit)**\n");
             }
-        } while (!saves.contains(choice) && !(choice.equals("Q") || choice.equals("q")));
+        } while (!saves.contains(choice));
 
         // return the filename
         if (!(choice.equals("Q") || choice.equals("q"))) file = "./saves/" + choice + ".txt";
@@ -142,18 +153,7 @@ public class Quoridor {
         System.out.println("\n---------------------------------------\n");
 
         // keep looping until we get a valid choice
-        do {
-            // take user input
-            System.out.print("Enter a Selection > ");
-            sel = Character.toUpperCase(sc.nextLine().charAt(0));
-
-            // check if selection is invalid
-            if (!options.contains(Character.toUpperCase(sel))) {
-                System.out.println("**ERR: Please select a valid option.**\n");
-            }
-        } while (!options.contains(Character.toUpperCase(sel)));
-
-        return sel;
+        return validateInput(options);
     }
 
     /**
@@ -304,7 +304,8 @@ public class Quoridor {
                 System.out.println("File loaded successfully.\n");
             }
             else {
-                System.out.println("**ERR: Invalid save file**\n");
+                System.out.println("**ERR: Invalid save file**");
+                load(savesMenu(false));
             }
         }
 
@@ -386,7 +387,6 @@ public class Quoridor {
     public static void main(String[] args) {
         // declare variables
         boolean quit = false;
-        boolean selecting = true;
         int winner;
 
         // output main menu
@@ -405,7 +405,7 @@ public class Quoridor {
                     break;
                 case 'L':
                     System.out.println("user selected load game");
-                    load(savesMenu());
+                    load(savesMenu(true));
                     break;
                 case 'H':
                     System.out.println("user selected help");
