@@ -1,3 +1,4 @@
+import java.sql.SQLOutput;
 import java.util.*;
 import java.io.*;
 
@@ -22,6 +23,37 @@ public class Quoridor {
     static Board board;
 
     /**
+     * posStrToArr method
+     * <p>
+     * Helper method to convert a string position (such as e7) to an integer array
+     *
+     * @param posStr The string to convert
+     * @return int[] - The position as an array
+     */
+    private static int[] posStrToArr(String posStr) {
+        int x = posStr.charAt(0) - 'a';
+        int y = posStr.charAt(1) - '1';
+
+        return new int[]{x, y};
+    }
+
+    /**
+     * posArrToStr method
+     * <p>
+     * Helper method to convert an integer array to a string position (such as e7)
+     *
+     * @param posArr The array to convert
+     * @return String - The position as a string
+     */
+    private static String posArrToStr(int[] posArr) {
+        char x = (char) (posArr[0] + 'a');
+        char y = (char) (posArr[1] + '1');
+
+        return String.valueOf(x) + y;
+    }
+
+
+    /**
      * menu method
      * <p>
      * Outputs the main menu
@@ -29,12 +61,11 @@ public class Quoridor {
      */
     public static char mainMenu() {
         // declare variables
-        Set<Character> options = new HashSet<Character>() {{
-            add('N');
-            add('L');
-            add('H');
-            add('Q');
-        }};
+        Set<Character> options = new HashSet<Character>();
+        options.add('N');
+        options.add('L');
+        options.add('H');
+        options.add('Q');
 
         System.out.println("\n---------- Welcome to QuoridorJ! ----------\n");
 
@@ -76,10 +107,11 @@ public class Quoridor {
         // declare variables
         File folder = new File("./saves");
         File[] listOfSaves = folder.listFiles();
-        List<String> saves = new ArrayList<String>() {{
-            add("Q");
-            add("q");
-        }};
+
+        List<String> saves = new ArrayList<String>();
+        saves.add("Q");
+        saves.add("q");
+
         String choice;
         String file;
 
@@ -95,13 +127,15 @@ public class Quoridor {
 
         if (showFiles) {
             // output save menu
-            System.out.println("\n--- Which Save Would You Like to Load? ----\n");
+            System.out.println("\n--------- Select a Save to Load ----------\n");
 
             // loop over each save and output the name
             for (String s : saves) {
-                System.out.print("{     ");
-                System.out.printf("%-36s", "<" + s + ">");
-                System.out.println("}");
+                if (!s.equals("Q") && !s.equals("q")) {
+                    System.out.print("{     ");
+                    System.out.printf("%-36s", "<" + s + ">");
+                    System.out.println("}");
+                }
             }
 
             System.out.println("\n-------------------------------------------\n");
@@ -134,13 +168,11 @@ public class Quoridor {
      */
     public static char turnMenu() {
         // declare variables
-        char sel;
-        Set<Character> options = new HashSet<Character>() {{
-            add('M');
-            add('P');
-            add('F');
-            add('S');
-        }};
+        Set<Character> options = new HashSet<Character>();
+        options.add('M');
+        options.add('P');
+        options.add('F');
+        options.add('S');
 
         // output menu
         System.out.println("\n---------- Make a Selection -----------\n");
@@ -154,6 +186,44 @@ public class Quoridor {
 
         // keep looping until we get a valid choice
         return validateInput(options);
+    }
+
+    public static int[] moveMenu(int current) {
+        // declare variables
+        String choice;
+        Set<String> validMoves = new HashSet<String>();
+        validMoves.add("q");
+        int[] pos;
+
+        // output menu
+        System.out.println("\n----- Select a Square to Move to ------\n");
+
+        for (List<Integer> move : board.calcValidPawnMoves(board.getPawn(current))) {
+            System.out.print("{     <");
+            System.out.print(posArrToStr(new int[]{move.get(0), move.get(1)}));
+            System.out.printf(">%29s\n", "}");
+            validMoves.add(posArrToStr(new int[]{move.get(0), move.get(1)}));
+        }
+
+        System.out.println("\n---------------------------------------\n");
+
+        // keep looping until we get a valid choice
+        do {
+            // take user input
+            System.out.print("Enter a selection (or Q to quit)> ");
+            choice = sc.nextLine().toLowerCase();
+
+            // check if it is a valid move
+            if (!validMoves.contains(choice)) {
+                System.out.println("*ERR: Please select a valid move (or Q to quit)**\n");
+            }
+        } while (!validMoves.contains(choice));
+
+        // check if the user chose to quit the current operation
+        if (!choice.equals("q")) pos = posStrToArr(choice);
+        else pos = new int[]{-1, -1};
+
+        return pos;
     }
 
     /**
@@ -192,7 +262,7 @@ public class Quoridor {
                 chars = line.toCharArray();
 
                 // set the positions, and human status of the players
-                p1Pos = new int[]{chars[2] - 'a', chars[3] - '1'};
+                p1Pos = posStrToArr(String.valueOf(chars[2]) + chars[3]);
                 p1Human = chars[6] == 'H';
 
                 // check if the pawn position is valid
@@ -212,7 +282,7 @@ public class Quoridor {
                 chars = line.toCharArray();
 
                 // set the symbols, positions, and human status of the players
-                p2Pos = new int[]{chars[2] - 'a', chars[3] - '1'};
+                p2Pos = posStrToArr(String.valueOf(chars[2]) + chars[3]);
                 p2Human = chars[6] == 'H';
 
                 // check if the pawn position is valid
@@ -271,7 +341,7 @@ public class Quoridor {
 
                     // set the orientation, position, and owner of the wall
                     wallVertical = chars[0] == '|';
-                    wallPos = new int[]{chars[2] - 'a', chars[3] - '1'};
+                    wallPos = posStrToArr(String.valueOf(chars[2]) + chars[3]);
                     wallOwner = chars[6] == 'O' ? 1 : 2;
 
                     // add the wall to the list if it is valid
@@ -343,11 +413,43 @@ public class Quoridor {
      * @param current The current player
      */
     public static void turn(int current) {
+        // declare variables
+        boolean menuSuccess = false;
+        char menuChoice = ' ';
+        int[] pawnMove = new int[2];
+
+        // output the board
         board.out();
 
-        switch (turnMenu()) {
+        // switch-case for the turn menu
+        while (!menuSuccess) {
+            switch (menuChoice = turnMenu()) {
+                case 'M':
+                    pawnMove = moveMenu(current);
+                    if (pawnMove[0] != -1) menuSuccess = true;
+                    break;
+                case 'P':
+                    System.out.println("user selected to place a wall");
+                    menuSuccess = true;
+                    break;
+                case 'S':
+                    System.out.println("user selected to save the game");
+                    menuSuccess = true;
+                    break;
+                case 'F':
+                    System.out.println("user selected to forfeit");
+                    menuSuccess = true;
+                    break;
+                default:
+                    System.out.println("*ERR: Please select a valid option.*\n");
+                    break;
+            }
+        }
+
+        switch (menuChoice) {
             case 'M':
-                System.out.println("user selected to move the pawn");
+                if (!board.movePawn(board.getPawn(current), pawnMove))
+                    System.out.println("**ERR: an issue has occurred when trying to move the pawn**");
                 break;
             case 'P':
                 System.out.println("user selected to place a wall");
@@ -388,6 +490,7 @@ public class Quoridor {
         // declare variables
         boolean quit = false;
         int winner;
+        String file;
 
         // output main menu
         System.out.println("\n  ___                   _     _            \n" +
@@ -400,12 +503,11 @@ public class Quoridor {
             // switch statement for menu selection
             switch (mainMenu()) {
                 case 'N':
-                    System.out.println("user selected new game");
                     board = new Board(true);
                     break;
                 case 'L':
-                    System.out.println("user selected load game");
-                    load(savesMenu(true));
+                    file = savesMenu(true);
+                    if (!file.equals("Quit")) load(file);
                     break;
                 case 'H':
                     System.out.println("user selected help");

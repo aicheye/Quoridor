@@ -41,7 +41,7 @@ public class Board {
     private int current = -1;
 
     /**
-     * getP1
+     * getP1 method
      * <p>
      * Getter for the first pawn
      * @return pawn - The pawn object
@@ -61,7 +61,24 @@ public class Board {
     }
 
     /**
-     * getCurrentPlayer
+     * getPawn method
+     * <p>
+     * Converts an id to a Pawn object
+     *
+     * @param id The id of the pawn
+     * @return Pawn - A pawn object
+     */
+    public Pawn getPawn(int id) {
+        Pawn p;
+
+        if (id == 1) p = p1;
+        else p = p2;
+
+        return p;
+    }
+
+    /**
+     * getCurrentPlayer method
      * <p>
      * Getter for the current player
      * @return int - The current player (1 or 2)
@@ -146,10 +163,9 @@ public class Board {
      */
     public void out() {
         // declare constants
-        final Map<String, String> markings = new HashMap<String, String>() {{
-            put("columns", "   a   b   c   d   e   f   g   h   i");
-            put("horiz-border", " –––––––––––––––––––––––––––––––––––––");
-        }};
+        final Map<String, String> markings = new HashMap<String, String>();
+        markings.put("columns", "   a   b   c   d   e   f   g   h   i");
+        markings.put("horiz-border", " –––––––––––––––––––––––––––––––––––––");
 
         // declare variables TODO: make constants for margins and spacing
         char[][] display = new char[SIZE * 2 - 1][SIZE * 4 - 3];
@@ -194,12 +210,12 @@ public class Board {
         }
 
         // loop over each valid pawn move for player 1 set the display for each square
-        for (List<Integer> pos : calcValidPawnMoves(getP1())) {
+        for (List<Integer> pos : calcValidPawnMoves(p1)) {
             display[pos.get(1) * 2][pos.get(0) * 4] = '~';
         }
 
         // output the column labels and the border
-        System.out.println(markings.get("columns"));
+        System.out.println("\n" + markings.get("columns"));
         System.out.println(markings.get("horiz-border"));
 
         // loop through the row and output each row
@@ -382,14 +398,11 @@ public class Board {
         // declare variable
         Pawn other;
         Set<List<Integer>> moves = new HashSet<List<Integer>>();
-        Set<Character> dirs = new HashSet<Character>() {{
-            add('N');
-            add('E');
-            add('S');
-            add('W');
-        }};
-        boolean blocked = false;
-        Set<List<Integer>> jumps = new HashSet<List<Integer>>();
+        Set<Character> dirs = new HashSet<Character>();
+        dirs.add('N');
+        dirs.add('E');
+        dirs.add('S');
+        dirs.add('W');
         List<Integer> newPos;
         char[] jumpChecks = new char[2];
 
@@ -459,5 +472,52 @@ public class Board {
         }
 
         return moves;
+    }
+
+    /**
+     * isValidPawnMove method
+     * <p>
+     * Checks if a pawn move is valid
+     *
+     * @param self   The pawn to check
+     * @param posArr The position to chec
+     * @return boolean - Whether the pawn move is valid
+     */
+    private boolean isValidPawnMove(Pawn self, int[] posArr) {
+        // declare variables
+        boolean valid = false;
+
+        List<Integer> pos = new ArrayList<Integer>();
+        pos.add(posArr[0]);
+        pos.add(posArr[1]);
+
+        Set<List<Integer>> validMoves = calcValidPawnMoves(self);
+
+        for (List<Integer> move : validMoves) if (move.equals(pos)) valid = true;
+
+        return valid;
+    }
+
+    /**
+     * movePawn method
+     * <p>
+     * Moves the pawn
+     *
+     * @param self   The pawn to move
+     * @param newPos The new position of the pawn
+     * @return boolean - If the move is successful
+     */
+    public boolean movePawn(Pawn self, int[] newPos) {
+        // declare variables
+        boolean success = true;
+
+        // check if the new position is a valid move
+        if (isValidPawnMove(self, newPos)) {
+            squares[newPos[0]][newPos[1]] = 0;
+            self.move(newPos);
+            squares[newPos[0]][newPos[1]] = self.getId();
+        } else success = false;
+
+        return success;
     }
 }

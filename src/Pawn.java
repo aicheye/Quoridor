@@ -1,5 +1,3 @@
-import java.util.*;
-
 /**
  * Pawn class
  * <p>
@@ -120,12 +118,12 @@ public class Pawn {
     }
 
     /**
-     * setPos method
+     * move method
      * <p>
-     * Setter for pawn position - DO NOT USE IN GAME CODE
+     * Moves the pawn's position (does not validate)
      * @param newPos The new position
      */
-    public void setPos(int[] newPos) {
+    public void move(int[] newPos) {
         pos = newPos;
     }
 }
