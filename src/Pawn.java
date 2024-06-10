@@ -36,10 +36,10 @@ public class Pawn {
                 break;
         }
 
-        if (!human) {
+        // if (!human) {
             // if the pawn is a computer, initialize a new computer object
             // this.computer = new Computer();
-        }
+        // }
     }
 
     /**

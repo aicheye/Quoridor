@@ -1,5 +1,5 @@
 O f2: Human
-X e8: Computer
+X e8: Human
 
 12 {O: 6 , X: 6 }:
 | e8: O

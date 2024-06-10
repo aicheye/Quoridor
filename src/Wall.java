@@ -89,15 +89,15 @@ public class Wall {
 
         if (vertical) {
             if (pos[0] == this.pos[0]) {
-                if (pos[1] == this.pos[1] || pos[1] == this.pos[1] - 1 && dir == 'E') blocking = true;
+                if ((pos[1] == this.pos[1] || pos[1] == this.pos[1] - 1) && dir == 'E') blocking = true;
             } else if (pos[0] == this.pos[0] + 1) {
-                if (pos[1] == this.pos[1] || pos[1] == this.pos[1] - 1 && dir == 'W') blocking = true;
+                if ((pos[1] == this.pos[1] || pos[1] == this.pos[1] - 1) && dir == 'W') blocking = true;
             }
         } else {
             if (pos[1] == this.pos[1]) {
-                if (pos[0] == this.pos[0] || pos[0] == this.pos[0] + 1 && dir == 'S') blocking = true;
+                if ((pos[0] == this.pos[0] || pos[0] == this.pos[0] + 1) && dir == 'S') blocking = true;
             } else if (pos[1] == this.pos[1] - 1) {
-                if (pos[0] == this.pos[0] || pos[0] == this.pos[0] + 1 && dir == 'N') blocking = true;
+                if ((pos[0] == this.pos[0] || pos[0] == this.pos[0] + 1) && dir == 'N') blocking = true;
             }
         }
 

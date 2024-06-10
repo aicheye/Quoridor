@@ -34,11 +34,11 @@ public class Board {
 
     // declare variables
     private final int[][] squares = new int[9][9];
-    private HashSet<Wall> walls = new HashSet<Wall>();
+    private Set<Wall> walls = new HashSet<Wall>();
     private final Pawn p1;
     private final Pawn p2;
     private final int[] wallsPlayer = new int[2];
-    private int current = -1;
+    private int current;
 
     /**
      * getP1 method
@@ -85,6 +85,16 @@ public class Board {
      */
     public int getCurrentPlayer() {
         return current;
+    }
+
+    /**
+     * nextPlayer method
+     * <p>
+     * Goes to the next player
+     */
+    public void nextPlayer() {
+        if (current == 1) current = 2;
+        else if (current == 2) current = 1;
     }
 
     /**
@@ -210,8 +220,10 @@ public class Board {
         }
 
         // loop over each valid pawn move for player 1 set the display for each square
-        for (List<Integer> pos : calcValidPawnMoves(p1)) {
-            display[pos.get(1) * 2][pos.get(0) * 4] = '~';
+        if (getPawn(current).isHuman()) {
+            for (List<Integer> pos : calcValidPawnMoves(getPawn(current))) {
+                display[pos.get(1) * 2][pos.get(0) * 4] = '~';
+            }
         }
 
         // output the column labels and the border
@@ -263,9 +275,9 @@ public class Board {
      * @param owner The owner of the wall
      * @return boolean - If the placement is valid
      */
-    public boolean validateWallPlace(int[] pos, boolean vert, int owner) {
+    public boolean validateWallPlace(int[] pos, boolean vert, Pawn owner) {
         // check if the owner has any walls left and call validateWallPos
-        return wallsPlayer[owner - 1] < MAX_WALLS && validateWallPos(new Wall(pos, vert, owner), walls);
+        return wallsPlayer[owner.getId() - 1] < MAX_WALLS && validateWallPos(new Wall(pos, vert, owner.getId()), walls);
     }
 
     /**
@@ -282,8 +294,9 @@ public class Board {
 
         // check if the wall is out of bounds
         if (wall.getX() < 0 || wall.getX() >= SIZE - 1 ||
-                wall.getY() <= 0 || wall.getY() >= SIZE)
+                wall.getY() <= 0 || wall.getY() >= SIZE) {
             valid = false;
+        }
 
         // continue if the wall is not out of bounds
         if (valid) {
@@ -475,15 +488,15 @@ public class Board {
     }
 
     /**
-     * isValidPawnMove method
+     * validatePawnMove method
      * <p>
      * Checks if a pawn move is valid
      *
      * @param self   The pawn to check
-     * @param posArr The position to chec
+     * @param posArr The position to check
      * @return boolean - Whether the pawn move is valid
      */
-    private boolean isValidPawnMove(Pawn self, int[] posArr) {
+    private boolean validatePawnMove(Pawn self, int[] posArr) {
         // declare variables
         boolean valid = false;
 
@@ -512,11 +525,33 @@ public class Board {
         boolean success = true;
 
         // check if the new position is a valid move
-        if (isValidPawnMove(self, newPos)) {
-            squares[newPos[0]][newPos[1]] = 0;
+        if (validatePawnMove(self, newPos)) {
+            squares[self.getX()][self.getY()] = 0;
             self.move(newPos);
             squares[newPos[0]][newPos[1]] = self.getId();
         } else success = false;
+
+        return success;
+    }
+
+    /**
+     * placeWall method
+     * <p>
+     * Places a wall
+     *
+     * @param pos   The position of the wall
+     * @param vert  Whether the wall is vertical
+     * @param owner The owner of the wall
+     */
+    public boolean placeWall(int[] pos, boolean vert, Pawn owner) {
+        // declare variables
+        boolean success = false;
+
+        // check if the new position is a valid move
+        if (validateWallPlace(pos, vert, owner)) {
+            walls.add(new Wall(pos, vert, owner.getId()));
+            success = true;
+        }
 
         return success;
     }
