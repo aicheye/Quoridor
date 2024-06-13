@@ -15,4 +15,4 @@ X e8: Human
 | c3: X
 | d2: X
 
-Current Move: Player 1
+Next Move: O

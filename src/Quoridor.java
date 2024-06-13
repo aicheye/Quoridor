@@ -11,7 +11,7 @@ import java.io.*;
 public class Quoridor {
     private static final Map<String, String> REGEX_STRINGS = new HashMap<String, String>() {{
         put("player", "^[OX]\\s[a-i][1-9]:\\s((Human)|(Computer))$");
-        put("walls", "^([1-9]|(1[0-9])|(20))\\s\\{O:\\s([1-9]|(10]))\\s,\\sX:\\s([1-9]|(10]))\\s}:$");
+        put("walls", "^([1-9]|(1[0-9])|(20))\\s\\{O:\\s(0|[1-9]|(10))\\s,\\sX:\\s(0|[1-9]|(10))\\s}:$");
         put("wall", "^[|–]\\s[a-i][1-9]:\\s[OX]$");
     }};
     private static final int SIZE = Board.getSize();
@@ -96,15 +96,15 @@ public class Quoridor {
     }
 
     /**
-     * savesMenu method
+     * loadMenu method
      * <p>
      * Outputs the load game menu
      * @param showFiles Whether to show the files again
      * @return String - The save file chosen
      */
-    public static String savesMenu(boolean showFiles) {
+    public static String loadMenu(boolean showFiles) {
         // declare variables
-        File folder = new File("./saves");
+        final File folder = new File("./saves");
         File[] listOfSaves = folder.listFiles();
 
         List<String> saves = new ArrayList<String>();
@@ -154,7 +154,7 @@ public class Quoridor {
 
         // return the filename
         if (!(choice.equals("Q") || choice.equals("q"))) file = "./saves/" + choice + ".txt";
-        else file = "Quit";
+        else file = "Q";
 
         return file;
     }
@@ -340,6 +340,79 @@ public class Quoridor {
     }
 
     /**
+     * saveMenu method
+     * <p>
+     * Method to allow the user to choose the name of their save file
+     *
+     * @return String - the name of the file
+     */
+    public static String saveMenu() {
+        // declare variables
+        final File folder = new File("./saves");
+        File[] listOfSaves = folder.listFiles();
+        final String permitted = "^[a-zA-Z0-9\\-_]*$";
+        final String[] forbidden = new String[]{"CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"};
+        String filename = "";
+        String userString;
+        boolean valid;
+
+        List<String> saves = new ArrayList<String>();
+
+        // loop over each file
+        if (listOfSaves != null) {
+            for (File save : listOfSaves) {
+                if (save.isFile()) {
+                    saves.add(save.getName().substring(0, save.getName().length() - 4)); // add to ArrayList
+                }
+            }
+        }
+
+        // keep looping until we have a valid filename
+        while (filename.isEmpty()) {
+            valid = true;
+
+            // take user input
+            System.out.println("\nEnter the name of your save file below using alphanumeric, hyphens, and underscores");
+            System.out.print("Please enter at least 3 characters (or Q to quit) > ");
+            userString = sc.nextLine();
+
+            if (userString.equalsIgnoreCase("Q")) filename = "Q";
+
+            // check if the user string uses the permitted characters
+            if (!userString.matches(permitted)) {
+                System.out.println("**ERR: Please only use permitted characters.**");
+                valid = false;
+            }
+
+            // check if the user string is too short
+            if (userString.length() < 3 && !userString.equalsIgnoreCase("Q")) {
+                System.out.println("**ERR: Please enter at least 3 characters.**");
+                valid = false;
+            }
+
+            // check if the save file already exists
+            for (String s : saves) {
+                if (s.equals(userString)) {
+                    System.out.println("**ERR: This save file already exists.**");
+                    valid = false;
+                }
+            }
+
+            // check if the file name is allowed in windows
+            for (String s : forbidden) {
+                if (s.equals(userString)) {
+                    System.out.println("**ERR: This filename is not allowed.**");
+                    valid = false;
+                }
+            }
+
+            if (valid) filename = userString;
+        }
+
+        return filename;
+    }
+
+    /**
      * load method
      * <p>
      * Loads a board from a save file
@@ -477,7 +550,7 @@ public class Quoridor {
             // get the current player
             br.readLine();
             line = br.readLine();
-            if (line.matches("^Current Move: Player [12]$")) current = Integer.parseInt(String.valueOf(line.charAt(21)));
+            if (line.matches("^Next Move: [OX]$")) current = line.charAt(11) == 'O' ? 1 : 2;
             else valid = false;
 
 
@@ -488,12 +561,62 @@ public class Quoridor {
             }
             else {
                 System.out.println("**ERR: Invalid save file**");
-                load(savesMenu(false));
+                load(loadMenu(false));
             }
         }
 
         catch (IOException e) {
             System.out.println("**ERR: File read error (does this file exist?)**\n");
+        }
+    }
+
+    /**
+     * save method
+     * <p>
+     * saves the game state in a file
+     *
+     * @param filename the name of the save file
+     */
+    public static void save(String filename) {
+        try {
+            // init buffered writer
+            BufferedWriter bw = new BufferedWriter(new FileWriter("./saves/" + filename + ".txt", false));
+
+            // write each pawn
+            bw.write("O ");
+            bw.write(posArrToStr(board.getP1().getPos()));
+            bw.write(": ");
+            bw.write(board.getP1().isHuman() ? "Human\n" : "Computer\n");
+
+            bw.write("X ");
+            bw.write(posArrToStr(board.getP2().getPos()));
+            bw.write(": ");
+            bw.write(board.getP2().isHuman() ? "Human\n\n" : "Computer\n\n");
+
+            // write the walls
+            bw.write(String.valueOf(MAX_WALLS * 2 - board.getWallsRemaining(board.getP1()) - board.getWallsRemaining(board.getP2())));
+            bw.write(" {O: ");
+            bw.write(String.valueOf(MAX_WALLS - board.getWallsRemaining(board.getP1())));
+            bw.write(" , X: ");
+            bw.write(String.valueOf(MAX_WALLS - board.getWallsRemaining(board.getP2())));
+            bw.write(" }:\n");
+
+            // write each wall
+            for (Wall w : board.getAllWalls()) {
+                bw.write(w.isVertical() ? "| " : "– ");
+                bw.write(posArrToStr(w.getPos()));
+                bw.write(": ");
+                bw.write(w.getOwner() == 1 ? "O\n" : "X\n");
+            }
+
+            // write the current player
+            bw.write("\nNext Move: ");
+            bw.write(board.getCurrentPlayer() == 1 ? "O\n" : "X\n");
+
+            // close bufferedwriter
+            bw.close();
+        } catch (IOException e) {
+            System.out.println("**ERR: File write error (do you have permissions to write to this folder?)**");
         }
     }
 
@@ -510,7 +633,9 @@ public class Quoridor {
         // loops until the game ends
         while (!gameEnd) {
             // make the next turn
-            turn(board.getCurrentPlayer());
+            if (turn(board.getCurrentPlayer())) {
+                gameEnd = true;
+            }
 
             // next player
             board.nextPlayer();
@@ -527,13 +652,16 @@ public class Quoridor {
      * <p>
      * Handles each turn
      * @param current The current player
+     * @return boolean - Whether the user has chosen to quit the game
      */
-    public static void turn(int current) {
+    public static boolean turn(int current) {
         // declare variables
         boolean menuSuccess = false;
         char menuChoice = ' ';
         int[] pawnMove = new int[2];
         int[] wallPlace = new int[3];
+        String file = "";
+        boolean quit = false;
 
         if (board.getPawn(current).isHuman()) {
             // output the board
@@ -551,8 +679,8 @@ public class Quoridor {
                         if (wallPlace[0] != -1) menuSuccess = true;
                         break;
                     case 'S':
-                        System.out.println("user selected to save the game");
-                        menuSuccess = true;
+                        file = saveMenu();
+                        if (!file.equals("Q")) menuSuccess = true;
                         break;
                     case 'F':
                         System.out.println("user selected to forfeit");
@@ -574,16 +702,20 @@ public class Quoridor {
                         System.out.println("**ERR: an unexpected issue has occurred when trying to place a wall**");
                     break;
                 case 'S':
-                    System.out.println("user selected to save the game");
+                    save(file);
+                    quit = true;
                     break;
                 case 'F':
                     System.out.println("user selected to forfeit");
+                    quit = true;
                     break;
                 default:
                     System.out.println("*ERR: Please select a valid option.*\n");
                     break;
             }
         }
+
+        return quit;
     }
 
     /**
@@ -626,8 +758,8 @@ public class Quoridor {
                     board = new Board(true);
                     break;
                 case 'L':
-                    file = savesMenu(true);
-                    if (!file.equals("Quit")) load(file);
+                    file = loadMenu(true);
+                    if (!file.equals("Q")) load(file);
                     break;
                 case 'H':
                     System.out.println("user selected help");
@@ -641,7 +773,13 @@ public class Quoridor {
             if (!quit) {
                 // begin the game loop
                 winner = gameLoop();
-                System.out.printf("Player %d has won.\n", winner);
+                if (winner == -1) quit = true;
+                else if (board.getP2().isHuman()) {
+                    System.out.printf("Player %d has won.\n", winner);
+                } else {
+                    if (winner == 1) System.out.println("You win!");
+                    else System.out.println("You lose!");
+                }
             }
         }
     }

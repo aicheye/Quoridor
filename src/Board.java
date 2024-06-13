@@ -37,7 +37,7 @@ public class Board {
     private Set<Wall> walls = new HashSet<Wall>();
     private final Pawn p1;
     private final Pawn p2;
-    private final List<Integer> wallsRemaining = new ArrayList<Integer>();
+    private final int[] wallsRemaining = new int[2];
     private int current;
 
     /**
@@ -69,7 +69,18 @@ public class Board {
      * @return int - The number of walls remaining for that pawn
      */
     public int getWallsRemaining(Pawn self) {
-        return wallsRemaining.get(self.getId() - 1);
+        return wallsRemaining[self.getId() - 1];
+    }
+
+    /**
+     * getAllWalls method
+     * <p>
+     * Get the set of all walls
+     *
+     * @return Set<Wall> The set of all walls
+     */
+    public Set<Wall> getAllWalls() {
+        return walls;
     }
 
     /**
@@ -128,8 +139,8 @@ public class Board {
         p2 = new Pawn(2, p2Human);
 
         // set walls to 10 each
-        wallsRemaining.add(MAX_WALLS);
-        wallsRemaining.add(MAX_WALLS);
+        wallsRemaining[0] = MAX_WALLS;
+        wallsRemaining[1] = MAX_WALLS;
 
         // set pawn positions
         squares[p1.getX()][p1.getY()] = 1;
@@ -170,8 +181,8 @@ public class Board {
             else p2WallsPlaced++;
         }
 
-        wallsRemaining.add(p1WallsPlaced);
-        wallsRemaining.add(p2WallsPlaced);
+        wallsRemaining[0] = MAX_WALLS - p1WallsPlaced;
+        wallsRemaining[1] = MAX_WALLS - p2WallsPlaced;
 
         this.walls = new HashSet<Wall>(walls);
 
@@ -189,7 +200,7 @@ public class Board {
         markings.put("columns", "   a   b   c   d   e   f   g   h   i");
         markings.put("horiz-border", " –––––––––––––––––––––––––––––––––––––");
 
-        // declare variables TODO: make constants for margins and spacing
+        // declare variables
         char[][] display = new char[SIZE * 2 - 1][SIZE * 4 - 3];
         int row = 9;
 
@@ -294,7 +305,7 @@ public class Board {
         else other = getP1();
 
         // check if the owner has any walls left and call validateWallPos
-        return wallsRemaining.get(owner.getId() - 1) > 0 &&
+        return wallsRemaining[owner.getId() - 1] > 0 &&
                 validateWallPos(new Wall(pos, vert, owner.getId()), walls) &&
                 !isWallBlockingPath(other, new Wall(pos, vert, owner.getId()));
     }
@@ -567,7 +578,7 @@ public class Board {
         // check if the new position is a valid move
         if (validateWallPlace(pos, vert, owner)) {
             walls.add(new Wall(pos, vert, owner.getId()));
-            wallsRemaining.set(owner.getId() - 1, wallsRemaining.get(owner.getId() - 1) - 1);
+            wallsRemaining[owner.getId() - 1]--;
             success = true;
         }
 
