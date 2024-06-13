@@ -252,83 +252,88 @@ public class Quoridor {
         List<String> allValidWallStrings = new ArrayList<String>();
         int[] userWall = new int[]{-1, -1, -1, -1};
 
-        // initialize the vertical and horizontal parts of allValidWalls
-        allValidWalls.add(new HashSet<List<Integer>>());
-        allValidWalls.add(new HashSet<List<Integer>>());
-
-        // loop over every position and check if both horizontal and vertical walls are possible
-        for (int x = 0; x <= SIZE - 1; x++) {
-            for (int y = 1; y <= SIZE; y++) {
-                // validate the vertical wall
-                if (board.validateWallPlace(new int[]{x, y}, true, board.getPawn(current))) {
-                    newWall = new ArrayList<Integer>();
-                    newWall.add(x);
-                    newWall.add(y);
-                    // add to ArrayList
-                    allValidWalls.get(1).add(newWall);
-                }
-                // validate the horizontal wall
-                if (board.validateWallPlace(new int[]{x, y}, false, board.getPawn(current))) {
-                    newWall = new ArrayList<Integer>();
-                    newWall.add(x);
-                    newWall.add(y);
-                    // add to ArrayList
-                    allValidWalls.get(0).add(newWall);
-                }
-            }
-        }
-
-        // get the user's preferred orientation
-        if (allValidWalls.get(1).size() == 0) {
-            System.out.print("You can only place a horizontal wall. Continue (Y/N)? > ");
-            if (Character.toUpperCase(sc.nextLine().charAt(0)) == 'Y') vertical = 0;
-            // TODO: fix crash when sc.nextLine is empty
-        }
-        if (allValidWalls.get(0).size() == 0) {
-            System.out.println("You can only place a vertical wall. Continue (Y/N)? > ");
-            if (Character.toUpperCase(sc.nextLine().charAt(0)) == 'Y') vertical = 1;
+        // check if the user has any remaining walls
+        if (board.getWallsRemaining(board.getPawn(current)) <= 0) {
+            System.out.println("**ERR: You have no walls remaining.**");
         } else {
-            // output menu
-            System.out.println("\n-------- Select an Orientation --------\n");
+            // initialize the vertical and horizontal parts of allValidWalls
+            allValidWalls.add(new HashSet<List<Integer>>());
+            allValidWalls.add(new HashSet<List<Integer>>());
 
-            System.out.println("{     <V>ertical                      }");
-            System.out.println("{     <H>oriziontal                   }");
-
-            System.out.println("\n---------------------------------------\n");
-
-            // take user input
-            while (vertical == -1 && orientationChoice != 'Q') {
-                System.out.print("Enter a selection (or Q to quit) > ");
-                orientationChoice = Character.toUpperCase(sc.nextLine().charAt(0));
-
-                // validate input
-                if (orientationChoice == 'V') vertical = 1;
-                else if (orientationChoice == 'H') vertical = 0;
-                else System.out.println("**ERR: Please select a valid orientation (or Q to quit)**\n");
-            }
-        }
-
-        // output the menu based on the given orientation (if the user has chosen to continue)
-        if (vertical != -1) {
-            // get all valid wall placements as strings
-            for (List<Integer> move : allValidWalls.get(vertical)) {
-                allValidWallStrings.add(posArrToStr(new int[]{move.get(0), move.get(1)}));
-            }
-
-            // keep looping until we get a valid choice
-            do {
-                // take user input
-                System.out.print("\nEnter the NW square of the wall you would like to place (or Q to quit) > ");
-                posChoice = sc.nextLine().toLowerCase();
-
-                // check if it is a valid move
-                if (!allValidWallStrings.contains(posChoice)) {
-                    System.out.println("*ERR: Please select a valid square (or Q to quit)**");
+            // loop over every position and check if both horizontal and vertical walls are possible
+            for (int x = 0; x <= SIZE - 1; x++) {
+                for (int y = 1; y <= SIZE; y++) {
+                    // validate the vertical wall
+                    if (board.validateWallPlace(new int[]{x, y}, true, board.getPawn(current))) {
+                        newWall = new ArrayList<Integer>();
+                        newWall.add(x);
+                        newWall.add(y);
+                        // add to ArrayList
+                        allValidWalls.get(1).add(newWall);
+                    }
+                    // validate the horizontal wall
+                    if (board.validateWallPlace(new int[]{x, y}, false, board.getPawn(current))) {
+                        newWall = new ArrayList<Integer>();
+                        newWall.add(x);
+                        newWall.add(y);
+                        // add to ArrayList
+                        allValidWalls.get(0).add(newWall);
+                    }
                 }
-            } while (!allValidWallStrings.contains(posChoice));
+            }
 
-            // create a new array to return
-            userWall = new int[]{posStrToArr(posChoice)[0], posStrToArr(posChoice)[1], vertical, current};
+            // get the user's preferred orientation
+            if (allValidWalls.get(1).size() == 0) {
+                System.out.print("You can only place a horizontal wall. Continue (Y/N)? > ");
+                if (Character.toUpperCase(sc.nextLine().charAt(0)) == 'Y') vertical = 0;
+                // TODO: fix crash when sc.nextLine is empty
+            }
+            if (allValidWalls.get(0).size() == 0) {
+                System.out.print("You can only place a vertical wall. Continue (Y/N)? > ");
+                if (Character.toUpperCase(sc.nextLine().charAt(0)) == 'Y') vertical = 1;
+            } else {
+                // output menu
+                System.out.println("\n-------- Select an Orientation --------\n");
+
+                System.out.println("{     <V>ertical                      }");
+                System.out.println("{     <H>oriziontal                   }");
+
+                System.out.println("\n---------------------------------------\n");
+
+                // take user input
+                while (vertical == -1 && orientationChoice != 'Q') {
+                    System.out.print("Enter a selection (or Q to quit) > ");
+                    orientationChoice = Character.toUpperCase(sc.nextLine().charAt(0));
+
+                    // validate input
+                    if (orientationChoice == 'V') vertical = 1;
+                    else if (orientationChoice == 'H') vertical = 0;
+                    else System.out.println("**ERR: Please select a valid orientation (or Q to quit)**\n");
+                }
+            }
+
+            // output the menu based on the given orientation (if the user has chosen to continue)
+            if (vertical != -1) {
+                // get all valid wall placements as strings
+                for (List<Integer> move : allValidWalls.get(vertical)) {
+                    allValidWallStrings.add(posArrToStr(new int[]{move.get(0), move.get(1)}));
+                }
+
+                // keep looping until we get a valid choice
+                do {
+                    // take user input
+                    System.out.print("\nEnter the NW square of the wall you would like to place (or Q to quit) > ");
+                    posChoice = sc.nextLine().toLowerCase();
+
+                    // check if it is a valid move
+                    if (!allValidWallStrings.contains(posChoice)) {
+                        System.out.println("**ERR: You cannot place a wall on that square.**");
+                    }
+                } while (!allValidWallStrings.contains(posChoice));
+
+                // create a new array to return
+                userWall = new int[]{posStrToArr(posChoice)[0], posStrToArr(posChoice)[1], vertical, current};
+            }
         }
 
         return userWall;
@@ -479,7 +484,7 @@ public class Quoridor {
             // initialize the board if the load is valid
             if (valid && p1 != null && p2 != null && wallSet.size() > 0) {
                 board = new Board(p1, p2, wallSet, current);
-                System.out.println("File loaded successfully.\n");
+                System.out.println("File loaded successfully.");
             }
             else {
                 System.out.println("**ERR: Invalid save file**");
@@ -562,11 +567,11 @@ public class Quoridor {
             switch (menuChoice) {
                 case 'M':
                     if (!board.movePawn(board.getPawn(current), pawnMove))
-                        System.out.println("**ERR: an issue has occurred when trying to move the pawn**");
+                        System.out.println("**ERR: an unexpected issue has occurred when trying to move the pawn**");
                     break;
                 case 'P':
                     if (!board.placeWall(new int[]{wallPlace[0], wallPlace[1]}, wallPlace[2] == 1, board.getPawn(wallPlace[3])))
-                        System.out.println("**ERR: an issue has occurred when trying to place a wall**");
+                        System.out.println("**ERR: an unexpected issue has occurred when trying to place a wall**");
                     break;
                 case 'S':
                     System.out.println("user selected to save the game");
@@ -636,7 +641,7 @@ public class Quoridor {
             if (!quit) {
                 // begin the game loop
                 winner = gameLoop();
-                System.out.printf("Player %d has won.\n\n", winner);
+                System.out.printf("Player %d has won.\n", winner);
             }
         }
     }
