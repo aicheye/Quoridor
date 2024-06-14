@@ -183,7 +183,8 @@ public class Quoridor {
 
         // output menu
         if (board.getP2().isHuman()) {
-            System.out.printf("\n-------- P%d: Make a Selection ---------\n\n", board.getCurrentPlayer());
+            System.out.printf("\n------ P%d (" + (board.getCurrentPlayer() == 1 ? "O" : "X") +
+                    "): Make a Selection -------\n\n", board.getCurrentPlayer());
         } else {
             System.out.println("\n---------- Make a Selection -----------\n");
         }
@@ -820,22 +821,22 @@ public class Quoridor {
                 winner = gameLoop();
                 if (winner == -1) quit = true;
 
-                    // check if its pvp and output the win screens
+                    // check if the game is pvp and output the win screens
                 else if (board.getP2().isHuman()) {
                     if (winner == 1) {
-                        System.out.println("\n ____  _                         ____   __        ___           _ \n" +
-                                "|  _ \\| | __ _ _   _  ___ _ __  |___ \\  \\ \\      / (_)_ __  ___| |\n" +
-                                "| |_) | |/ _` | | | |/ _ \\ '__|   __) |  \\ \\ /\\ / /| | '_ \\/ __| |\n" +
-                                "|  __/| | (_| | |_| |  __/ |     / __/    \\ V  V / | | | | \\__ \\_|\n" +
-                                "|_|   |_|\\__,_|\\__, |\\___|_|    |_____|    \\_/\\_/  |_|_| |_|___(_)\n" +
-                                "               |___/                                              \n");
-                    } else {
                         System.out.println("\n ____  _                         _  __        ___           _ \n" +
                                 "|  _ \\| | __ _ _   _  ___ _ __  / | \\ \\      / (_)_ __  ___| |\n" +
                                 "| |_) | |/ _` | | | |/ _ \\ '__| | |  \\ \\ /\\ / /| | '_ \\/ __| |\n" +
                                 "|  __/| | (_| | |_| |  __/ |    | |   \\ V  V / | | | | \\__ \\_|\n" +
                                 "|_|   |_|\\__,_|\\__, |\\___|_|    |_|    \\_/\\_/  |_|_| |_|___(_)\n" +
                                 "               |___/                                          ");
+                    } else {
+                        System.out.println("\n ____  _                         ____   __        ___           _ \n" +
+                                "|  _ \\| | __ _ _   _  ___ _ __  |___ \\  \\ \\      / (_)_ __  ___| |\n" +
+                                "| |_) | |/ _` | | | |/ _ \\ '__|   __) |  \\ \\ /\\ / /| | '_ \\/ __| |\n" +
+                                "|  __/| | (_| | |_| |  __/ |     / __/    \\ V  V / | | | | \\__ \\_|\n" +
+                                "|_|   |_|\\__,_|\\__, |\\___|_|    |_____|    \\_/\\_/  |_|_| |_|___(_)\n" +
+                                "               |___/                                              \n");
                     }
                 } else {
                     if (winner == 1) {
