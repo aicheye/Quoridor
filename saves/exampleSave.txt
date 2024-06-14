@@ -1,0 +1,18 @@
+O f3: Human
+X e8: Human
+
+12 {O: 6 , X: 6 }:
+| e4: X
+| d2: X
+– d4: X
+– b4: X
+| e8: O
+– d7: O
+| b5: O
+– f4: X
+| e6: O
+| c3: X
+– a7: O
+– a6: O
+
+Next Move: X

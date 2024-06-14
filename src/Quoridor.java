@@ -9,17 +9,27 @@ import java.io.*;
  * @version 30/05/2024
  */
 public class Quoridor {
-    private static final Map<String, String> REGEX_STRINGS = new HashMap<String, String>() {{
-        put("player", "^[OX]\\s[a-i][1-9]:\\s((Human)|(Computer))$");
-        put("walls", "^([1-9]|(1[0-9])|(20))\\s\\{O:\\s(0|[1-9]|(10))\\s,\\sX:\\s(0|[1-9]|(10))\\s}:$");
-        put("wall", "^[|–]\\s[a-i][1-9]:\\s[OX]$");
-    }};
     private static final int SIZE = Board.getSize();
     private static final int MAX_WALLS = Board.getMaxWalls();
 
     // declare variables
     static Scanner sc = new Scanner(System.in);
     static Board board;
+
+    /**
+     * nextChar method
+     * <p>
+     * Helper method to allow inputs to get the first character of the user's input
+     *
+     * @return char - The character
+     */
+    private static char inputOneChar() {
+        String input = sc.nextLine();
+        char choice = ' ';
+        if (input.length() > 0) choice = input.charAt(0);
+
+        return Character.toUpperCase(choice);
+    }
 
     /**
      * posStrToArr method
@@ -84,7 +94,7 @@ public class Quoridor {
         do {
             // take user input
             System.out.print("Enter a Selection > ");
-            sel = Character.toUpperCase(sc.nextLine().charAt(0));
+            sel = inputOneChar();
 
             // check if selection is invalid
             if (!options.contains(Character.toUpperCase(sel))) {
@@ -174,7 +184,11 @@ public class Quoridor {
         options.add('S');
 
         // output menu
-        System.out.println("\n---------- Make a Selection -----------\n");
+        if (board.getP2().isHuman()) {
+            System.out.printf("\n-------- P%d: Make a Selection ---------\n\n", board.getCurrentPlayer());
+        } else {
+            System.out.println("\n---------- Make a Selection -----------\n");
+        }
 
         System.out.println(  "{     <M>ove your pawn                }");
         System.out.println(  "{     <P>lace a wall                  }");
@@ -191,12 +205,11 @@ public class Quoridor {
      * moveMenu method
      * <p>
      * Displays a menu to allow the user to choose a square to move to
-     *
-     * @param current The current player (1 or 2)
      * @return int[] - The position the user selects
      */
-    public static int[] moveMenu(int current) {
+    public static int[] moveMenu() {
         // declare variables
+        int current = board.getCurrentPlayer();
         String choice;
         Set<String> validMoves = new HashSet<String>();
         validMoves.add("q");
@@ -237,13 +250,12 @@ public class Quoridor {
      * wallMenu method
      * <p>
      * Displays a menu to allow the user to choose where to place
-     *
-     * @param current The current player
      * @return int[] - An array containing the x position of the wall, the y position of the wall, and whether the wall is vertical.
      * Returns an array filled with -1 if the user chooses to quit.
      */
-    public static int[] wallMenu(int current) {
+    public static int[] wallMenu() {
         // declare variables
+        int current = board.getCurrentPlayer();
         List<Set<List<Integer>>> allValidWalls = new ArrayList<Set<List<Integer>>>();
         List<Integer> newWall;
         int vertical = -1;
@@ -285,12 +297,11 @@ public class Quoridor {
             // get the user's preferred orientation
             if (allValidWalls.get(1).size() == 0) {
                 System.out.print("You can only place a horizontal wall. Continue (Y/N)? > ");
-                if (Character.toUpperCase(sc.nextLine().charAt(0)) == 'Y') vertical = 0;
-                // TODO: fix crash when sc.nextLine is empty
+                if (inputOneChar() == 'Y') vertical = 0;
             }
             if (allValidWalls.get(0).size() == 0) {
                 System.out.print("You can only place a vertical wall. Continue (Y/N)? > ");
-                if (Character.toUpperCase(sc.nextLine().charAt(0)) == 'Y') vertical = 1;
+                if (inputOneChar() == 'Y') vertical = 1;
             } else {
                 // output menu
                 System.out.println("\n-------- Select an Orientation --------\n");
@@ -303,7 +314,7 @@ public class Quoridor {
                 // take user input
                 while (vertical == -1 && orientationChoice != 'Q') {
                     System.out.print("Enter a selection (or Q to quit) > ");
-                    orientationChoice = Character.toUpperCase(sc.nextLine().charAt(0));
+                    orientationChoice = inputOneChar();
 
                     // validate input
                     if (orientationChoice == 'V') vertical = 1;
@@ -350,7 +361,7 @@ public class Quoridor {
         // declare variables
         final File folder = new File("./saves");
         File[] listOfSaves = folder.listFiles();
-        final String permitted = "^[a-zA-Z0-9\\-_]*$";
+        final String FILENAME_REGEX = "^[a-zA-Z0-9\\-_]*$";
         final String[] forbidden = new String[]{"CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"};
         String filename = "";
         String userString;
@@ -379,7 +390,7 @@ public class Quoridor {
             if (userString.equalsIgnoreCase("Q")) filename = "Q";
 
             // check if the user string uses the permitted characters
-            if (!userString.matches(permitted)) {
+            if (!userString.matches(FILENAME_REGEX)) {
                 System.out.println("**ERR: Please only use permitted characters.**");
                 valid = false;
             }
@@ -393,8 +404,10 @@ public class Quoridor {
             // check if the save file already exists
             for (String s : saves) {
                 if (s.equals(userString)) {
-                    System.out.println("**ERR: This save file already exists.**");
-                    valid = false;
+                    System.out.println("This save file already exists.");
+                    System.out.print("Do you want to override your previous save (Y/N)? > ");
+                    if (inputOneChar() == 'Y') valid = true;
+                    else valid = false;
                 }
             }
 
@@ -419,6 +432,11 @@ public class Quoridor {
      * @param filename The file to load
      */
     public static void load(String filename) {
+        // regex strings
+        final String PLAYERS_REGEX = "^[OX]\\s[a-i][1-9]:\\s((Human)|(Computer))$";
+        final String WALLS_REGEX = "^([1-9]|(1[0-9])|(20))\\s\\{O:\\s(0|[1-9]|(10))\\s,\\sX:\\s(0|[1-9]|(10))\\s}:$";
+        final String WALL_REGEX = "^[|–]\\s[a-i][1-9]:\\s[OX]$";
+
         // declare variables
         boolean valid = true;
         String line;
@@ -443,7 +461,7 @@ public class Quoridor {
             line = br.readLine();
 
             // check if the line matches
-            if (line.matches(REGEX_STRINGS.get("player"))) {
+            if (line.matches(PLAYERS_REGEX)) {
                 // split the line into characters
                 chars = line.toCharArray();
 
@@ -463,7 +481,7 @@ public class Quoridor {
             line = br.readLine();
 
             // check if the line matches
-            if (line.matches(REGEX_STRINGS.get("player")) && valid) {
+            if (line.matches(PLAYERS_REGEX) && valid) {
                 // split the line into characters
                 chars = line.toCharArray();
 
@@ -484,7 +502,7 @@ public class Quoridor {
             line = br.readLine();
 
             // check if the line matches
-            if (line.matches(REGEX_STRINGS.get("walls")) && valid) {
+            if (line.matches(WALLS_REGEX) && valid) {
                 // split the line into characters
                 split = line.split("\\s");
 
@@ -521,7 +539,7 @@ public class Quoridor {
                 // read the next line
                 line = br.readLine();
 
-                if (line.matches(REGEX_STRINGS.get("wall")) && valid) {
+                if (line.matches(WALL_REGEX) && valid) {
                     // split the line into characters
                     chars = line.toCharArray();
 
@@ -633,7 +651,7 @@ public class Quoridor {
         // loops until the game ends
         while (!gameEnd) {
             // make the next turn
-            if (turn(board.getCurrentPlayer())) {
+            if (turn()) {
                 gameEnd = true;
             }
 
@@ -651,11 +669,11 @@ public class Quoridor {
      * turn method
      * <p>
      * Handles each turn
-     * @param current The current player
      * @return boolean - Whether the user has chosen to quit the game
      */
-    public static boolean turn(int current) {
+    public static boolean turn() {
         // declare variables
+        int current = board.getCurrentPlayer();
         boolean menuSuccess = false;
         char menuChoice = ' ';
         int[] pawnMove = new int[2];
@@ -671,11 +689,11 @@ public class Quoridor {
             while (!menuSuccess) {
                 switch (menuChoice = turnMenu()) {
                     case 'M':
-                        pawnMove = moveMenu(current);
+                        pawnMove = moveMenu();
                         if (pawnMove[0] != -1) menuSuccess = true;
                         break;
                     case 'P':
-                        wallPlace = wallMenu(current);
+                        wallPlace = wallMenu();
                         if (wallPlace[0] != -1) menuSuccess = true;
                         break;
                     case 'S':
@@ -683,8 +701,8 @@ public class Quoridor {
                         if (!file.equals("Q")) menuSuccess = true;
                         break;
                     case 'F':
-                        System.out.println("user selected to forfeit");
-                        menuSuccess = true;
+                        System.out.print("Are you sure you want to forfeit (Y/N) ? > ");
+                        if (inputOneChar() == 'Y') menuSuccess = true;
                         break;
                     default:
                         System.out.println("**ERR: Please select a valid option.*\n");
@@ -706,8 +724,7 @@ public class Quoridor {
                     quit = true;
                     break;
                 case 'F':
-                    System.out.println("user selected to forfeit");
-                    quit = true;
+                    board.getPawn(current == 1 ? 2 : 1).move(new int[]{0, current == 1 ? 0 : 8});
                     break;
                 default:
                     System.out.println("*ERR: Please select a valid option.*\n");
@@ -752,33 +769,96 @@ public class Quoridor {
                 " \\__\\_\\\\__,_|\\___/|_|  |_|\\__,_|\\___/|_|");
 
         while (!quit) {
-            // switch statement for menu selection
-            switch (mainMenu()) {
-                case 'N':
-                    board = new Board(true);
-                    break;
-                case 'L':
-                    file = loadMenu(true);
-                    if (!file.equals("Q")) load(file);
-                    break;
-                case 'H':
-                    System.out.println("user selected help");
-                    break;
-                case 'Q':
-                    System.out.println("user selected quit");
-                    quit = true;
-                    break;
+            // switch statement for menu selection: keep looping until the board is instantiated
+            while (board == null) {
+                switch (mainMenu()) {
+                    case 'N':
+                        board = new Board(true);
+                        break;
+                    case 'L':
+                        file = loadMenu(true);
+                        if (!file.equals("Q")) load(file);
+                        break;
+                    case 'H':
+                        // output the rules
+                        System.out.println("\n------------ Rules of the Game ------------\n");
+
+                        System.out.println("{    Both you and your opponent have      }");
+                        System.out.println("{    pawns (O and X). Your goal is to     }");
+                        System.out.println("{    get your own pawn to the other       }");
+                        System.out.println("{    side and block your opponent's       }");
+                        System.out.println("{    pawn.                                }");
+                        System.out.println("{                                         }");
+                        System.out.println("{    Player 1 (O) starts at row 1.        }");
+                        System.out.println("{    Player 2 (X) starts at row 9.        }");
+                        System.out.println("{                                         }");
+                        System.out.println("{    On each turn, you may either move    }");
+                        System.out.println("{    your pawn or place a wall.           }");
+                        System.out.println("{                                         }");
+                        System.out.println("{    The squares which you can move to    }");
+                        System.out.println("{    are represented using '~'. You may   }");
+                        System.out.println("{    place a wall anywhere that is not    }");
+                        System.out.println("{    occupied, but there must always be   }");
+                        System.out.println("{    a valid path to the other side.      }");
+                        System.out.println("{                                         }");
+                        System.out.println("{    Try loading the exampleSave to see   }");
+                        System.out.println("{    an example of a game.                }");
+
+                        System.out.println("\n-------------------------------------------\n");
+
+                        // speedbump
+                        System.out.print("Press enter to go back > ");
+                        sc.nextLine();
+                        break;
+                    case 'Q':
+                        System.out.println("user selected quit");
+                        quit = true;
+                        break;
+                }
             }
 
             if (!quit) {
                 // begin the game loop
                 winner = gameLoop();
                 if (winner == -1) quit = true;
+
+                    // check if its pvp and output the win screens
                 else if (board.getP2().isHuman()) {
-                    System.out.printf("Player %d has won.\n", winner);
+                    if (winner == 1) {
+                        System.out.println("\n ____  _                         ____   __        ___           _ \n" +
+                                "|  _ \\| | __ _ _   _  ___ _ __  |___ \\  \\ \\      / (_)_ __  ___| |\n" +
+                                "| |_) | |/ _` | | | |/ _ \\ '__|   __) |  \\ \\ /\\ / /| | '_ \\/ __| |\n" +
+                                "|  __/| | (_| | |_| |  __/ |     / __/    \\ V  V / | | | | \\__ \\_|\n" +
+                                "|_|   |_|\\__,_|\\__, |\\___|_|    |_____|    \\_/\\_/  |_|_| |_|___(_)\n" +
+                                "               |___/                                              \n");
+                    } else {
+                        System.out.println("\n ____  _                         _  __        ___           _ \n" +
+                                "|  _ \\| | __ _ _   _  ___ _ __  / | \\ \\      / (_)_ __  ___| |\n" +
+                                "| |_) | |/ _` | | | |/ _ \\ '__| | |  \\ \\ /\\ / /| | '_ \\/ __| |\n" +
+                                "|  __/| | (_| | |_| |  __/ |    | |   \\ V  V / | | | | \\__ \\_|\n" +
+                                "|_|   |_|\\__,_|\\__, |\\___|_|    |_|    \\_/\\_/  |_|_| |_|___(_)\n" +
+                                "               |___/                                          ");
+                    }
                 } else {
-                    if (winner == 1) System.out.println("You win!");
-                    else System.out.println("You lose!");
+                    if (winner == 1) {
+                        System.out.println("\n__   __           __        ___       _ \n" +
+                                "\\ \\ / /__  _   _  \\ \\      / (_)_ __ | |\n" +
+                                " \\ V / _ \\| | | |  \\ \\ /\\ / /| | '_ \\| |\n" +
+                                "  | | (_) | |_| |   \\ V  V / | | | | |_|\n" +
+                                "  |_|\\___/ \\__,_|    \\_/\\_/  |_|_| |_(_)");
+                    } else {
+                        System.out.println("\n__   __            _                         \n" +
+                                "\\ \\ / /__  _   _  | |    ___  ___  ___       \n" +
+                                " \\ V / _ \\| | | | | |   / _ \\/ __|/ _ \\      \n" +
+                                "  | | (_) | |_| | | |__| (_) \\__ \\  __/_ _ _ \n" +
+                                "  |_|\\___/ \\__,_| |_____\\___/|___/\\___(_|_|_)");
+                    }
+                }
+
+                // speedbump
+                if (winner != -1) {
+                    System.out.print("Press enter to continue > ");
+                    sc.nextLine();
                 }
             }
         }
