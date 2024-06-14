@@ -118,11 +118,9 @@ public class Quoridor {
         File[] listOfSaves = folder.listFiles();
 
         List<String> saves = new ArrayList<String>();
-        saves.add("Q");
-        saves.add("q");
 
-        String choice;
-        String file;
+        char choice;
+        String file = null;
 
         // loop over each file
         if (listOfSaves != null) {
@@ -133,39 +131,39 @@ public class Quoridor {
             }
         }
 
-
         if (showFiles) {
             // output save menu
             System.out.println("\n--------- Select a Save to Load ----------\n");
 
             // loop over each save and output the name
-            for (String s : saves) {
-                if (!s.equals("Q") && !s.equals("q")) {
-                    System.out.print("{     ");
-                    System.out.printf("%-36s", "<" + s + ">");
-                    System.out.println("}");
-                }
+            for (int i = 0; i < saves.size(); i++) {
+                String s = saves.get(i);
+
+                System.out.print("{     ");
+                System.out.printf("%-36s", "<" + (i + 1) + "> " + s);
+                System.out.println("}");
             }
 
             System.out.println("\n-------------------------------------------\n");
         }
 
         // keep looping until we get a valid choice
-        do {
+        while (file == null) {
             // take user input and return it if valid
             System.out.print("Enter a selection (or Q to quit) > ");
-            choice = sc.nextLine();
+            choice = inputOneChar();
 
             // check if it is a valid file
-            if (!saves.contains(choice)) {
-                System.out.println("*ERR: Please select a valid file (or Q to quit)**\n");
-            }
-        } while (!saves.contains(choice));
+            if (0 <= choice - '1' && choice - '1' < saves.size()) file = "./saves/" + saves.get(choice - '1') + ".txt";
+
+                // check if the user chose to quit the loop
+            else if (choice == 'Q') file = "Q";
+
+                // output error
+            else System.out.println("*ERR: Please select a valid file (or Q to quit)**\n");
+        }
 
         // return the filename
-        if (!(choice.equals("Q") || choice.equals("q"))) file = "./saves/" + choice + ".txt";
-        else file = "Q";
-
         return file;
     }
 
@@ -384,7 +382,7 @@ public class Quoridor {
 
             // take user input
             System.out.println("\nEnter the name of your save file below using alphanumeric, hyphens, and underscores");
-            System.out.print("Please enter at least 3 characters (or Q to quit) > ");
+            System.out.print("Please enter between 4-32 characters (or Q to quit) > ");
             userString = sc.nextLine();
 
             if (userString.equalsIgnoreCase("Q")) filename = "Q";
@@ -395,9 +393,9 @@ public class Quoridor {
                 valid = false;
             }
 
-            // check if the user string is too short
-            if (userString.length() < 3 && !userString.equalsIgnoreCase("Q")) {
-                System.out.println("**ERR: Please enter at least 3 characters.**");
+            // check if the user string is too short or too long
+            if ((userString.length() < 3 || userString.length() > 32) && !userString.equalsIgnoreCase("Q")) {
+                System.out.println("**ERR: Please enter between 4 and 32 characters.**");
                 valid = false;
             }
 
@@ -584,7 +582,7 @@ public class Quoridor {
         }
 
         catch (IOException e) {
-            System.out.println("**ERR: File read error (does this file exist?)**\n");
+            System.out.println("**ERR: File read error (does this file exist?)**");
         }
     }
 
