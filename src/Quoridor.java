@@ -15,7 +15,7 @@ public class Quoridor {
     // declare variables
     private static Scanner sc = new Scanner(System.in);
     private static Board board;
-    private static Computer p2Computer;
+    // private static Computer p2Computer;
     private static boolean abort = false;
 
     /**
@@ -494,7 +494,7 @@ public class Quoridor {
                 if (Board.validatePawnPos(p2Pos)) {
                     p2 = new Pawn(p2Pos, 2, p2Human); // initialize a new pawn object
 
-                    p2Computer = p2Human ? null : new Computer(0); // initialize a new computer object
+                    // p2Computer = p2Human ? null : new Computer(0); // initialize a new computer object
                 }
                 else valid = false;
             }
@@ -728,50 +728,6 @@ public class Quoridor {
                     break;
             }
         }
-
-        // computer's move
-        else {
-            // get the move from the computer
-            int[] move = p2Computer.getInstruction(board.getPawn(board.getCurrentPlayer()), board);
-
-            // output display
-            System.out.println("\n    _______  _______   _______   ________  ________  ________   _______   _______ \n" +
-                    "  //       \\/       \\\\/       \\\\/        \\/    /   \\/        \\//       \\//       \\\n" +
-                    " //        /        //        //         /         /        _//        //        /\n" +
-                    "/       --/         /         //      __/        ///       //        _/        _/ \n" +
-                    "\\________/\\________/\\__/__/__/\\\\_____/  \\_______// \\_____// \\________/\\____/___/ ");
-
-            // check if the move is a wall or a pawn
-            if (move[0] == 0) {
-                // move the pawn
-                if (board.movePawn(board.getPawn(board.getCurrentPlayer()), new int[]{move[1], move[2]})) {
-                    System.out.println("\nThe computer has moved its pawn to " + posArrToStr(new int[]{move[1], move[2]}));
-
-                    // speedbump for the user
-                    System.out.print("Press [ENTER] to continue > ");
-                    sc.nextLine();
-                }
-                // output an error message if the move is invalid
-                else {
-                    System.out.println("\n**ERR: An unexpected issue has occurred when trying to execute the computer's move.**");
-                    abort = true;
-                }
-            } else {
-                // place the wall
-                if (board.placeWall(board.getPawn(board.getCurrentPlayer()), new int[]{move[1], move[2]}, move[3] == 1)) {
-                    System.out.println("\nThe computer has placed a " + (move[3] == 1 ? " vertical" : " horizontal") + " wall at " + posArrToStr(new int[]{move[1], move[2]}));
-
-                    // speedbump for the user
-                    System.out.print("Press [ENTER] to continue > ");
-                    sc.nextLine();
-                }
-                // output an error message if the wall placement is invalid
-                else {
-                    System.out.println("\n**ERR: An unexpected issue has occurred when trying to execute the computer's placement.**");
-                    abort = true;
-                }
-            }
-        }
     }
 
     /**
@@ -816,7 +772,7 @@ public class Quoridor {
                         if (inputOneChar() == 'Y') board = new Board(false);
                         else board = new Board(true);
 
-                        p2Computer = board.getP2().isHuman() ? null : new Computer(0);
+                        // p2Computer = board.getP2().isHuman() ? null : new Computer(0);
 
                         break;
                     case 'L':
