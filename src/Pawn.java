@@ -15,7 +15,6 @@ public class Pawn {
     private int[] pos = new int[2];
     private final int id;
     private final boolean human;
-    private final Computer computer;
 
     /**
      * Pawn method
@@ -36,14 +35,6 @@ public class Pawn {
                 pos = P2_START;
                 break;
         }
-
-        // TODO: IMPLEMENT PLAY VS COMPUTER
-        if (!human) {
-            // if the pawn is a computer, initialize a new computer object
-            this.computer = new Computer(0);
-        } else {
-            this.computer = null;
-        }
     }
 
     /**
@@ -59,7 +50,6 @@ public class Pawn {
         this.pos = new int[] {pos[0], pos[1]};
         this.id = id;
         this.human = human;
-        this.computer = null;
     }
 
     /**
