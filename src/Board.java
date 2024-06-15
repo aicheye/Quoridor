@@ -190,11 +190,11 @@ public class Board {
     }
 
     /**
-     * out method
+     * sysOut method
      * <p>
      * Prints the board to the console
      */
-    public void out() {
+    public void sysOut() {
         // declare constants
         final Map<String, String> markings = new HashMap<String, String>();
         markings.put("columns", "   a   b   c   d   e   f   g   h   i");
@@ -293,12 +293,12 @@ public class Board {
      * validateWallPlace method
      * <p>
      * Checks if a wall placement is valid on the current board
-     * @param pos The position of the wall
-     * @param vert Whether the wall is vertical
      * @param owner The owner of the wall
+     * @param pos The position of the wall
+     * @param vertical Whether the wall is vertical
      * @return boolean - If the placement is valid
      */
-    public boolean validateWallPlace(int[] pos, boolean vert, Pawn owner) {
+    public boolean validateWallPlace(Pawn owner, int[] pos, boolean vertical) {
         // declare variables
         Pawn other;
         if (owner.getId() == 1) other = getP2();
@@ -306,8 +306,8 @@ public class Board {
 
         // check if the owner has any walls left and call validateWallPos
         return wallsRemaining[owner.getId() - 1] > 0 &&
-                validateWallPos(new Wall(pos, vert, owner.getId()), walls) &&
-                !isWallBlockingPath(other, new Wall(pos, vert, owner.getId()));
+                validateWallPos(new Wall(pos, vertical, owner.getId()), walls) &&
+                !isWallBlockingPath(other, new Wall(pos, vertical, owner.getId()));
     }
 
     /**
@@ -568,16 +568,16 @@ public class Board {
      * Places a wall
      *
      * @param pos   The position of the wall
-     * @param vert  Whether the wall is vertical
+     * @param vertical  Whether the wall is vertical
      * @param owner The owner of the wall
      */
-    public boolean placeWall(int[] pos, boolean vert, Pawn owner) {
+    public boolean placeWall(Pawn owner, int[] pos, boolean vertical) {
         // declare variables
         boolean success = false;
 
         // check if the new position is a valid move
-        if (validateWallPlace(pos, vert, owner)) {
-            walls.add(new Wall(pos, vert, owner.getId()));
+        if (validateWallPlace(owner, pos, vertical)) {
+            walls.add(new Wall(pos, vertical, owner.getId()));
             wallsRemaining[owner.getId() - 1]--;
             success = true;
         }

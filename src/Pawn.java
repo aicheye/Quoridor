@@ -35,12 +35,6 @@ public class Pawn {
                 pos = P2_START;
                 break;
         }
-
-        // TODO: IMPLEMENT PLAY VS COMPUTER
-        // if (!human) {
-            // if the pawn is a computer, initialize a new computer object
-            // this.computer = new Computer();
-        // }
     }
 
     /**
