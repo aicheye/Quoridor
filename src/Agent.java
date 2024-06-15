@@ -24,25 +24,25 @@ public class Agent {
     }
 
     /**
-     * encodeInstruction method
+     * encodeAction method
      * <p>
-     * Encodes an instruction into an array (wall)
+     * Encodes an action into an array (wall)
      *
      * @param pos      The position of the wall
      * @param vertical True if the wall is vertical, false if the wall is horizontal
      */
-    private static int[] encodeInstruction(int[] pos, boolean vertical) {
+    private static int[] encodeAction(int[] pos, boolean vertical) {
         return new int[]{1, pos[0], pos[1], vertical ? 1 : 0};
     }
 
     /**
-     * encodeInstruction method
+     * encodeAction method
      * <p>
-     * Encodes an instruction into an array (move)
+     * Encodes an action into an array (move)
      *
      * @param pos The position of the move
      */
-    private static int[] encodeInstruction(int[] pos) {
+    private static int[] encodeAction(int[] pos) {
         return new int[]{0, pos[0], pos[1], 0};
     }
 
@@ -55,16 +55,16 @@ public class Agent {
      * @param board The current state of the board
      * @return int[] - The move that the computer will make
      */
-    public int[] getInstruction(Pawn self, Board board) {
+    public int[] getAction(Pawn self, Board board) {
         if (diff == 0) {
-            return getInstructionEasy(self, board);
+            return getActionEasy(self, board);
         } else {
-            return getInstructionHard(self, board);
+            return getActionHard(self, board);
         }
     }
 
     /**
-     * getInstructionEasy method
+     * getActionEasy method
      * <p>
      * Returns the move that the computer will make (easy)
      *
@@ -72,7 +72,7 @@ public class Agent {
      * @param board The current state of the board
      * @return int[] - The move that the computer will make
      */
-    public int[] getInstructionEasy(Pawn self, Board board) {
+    public int[] getActionEasy(Pawn self, Board board) {
         // hidden constant: adjusted based on the number of walls already on the board
         int WALL_DIFF_THRESHOLD;
         if (board.getWallsRemaining(self) == 10) {
@@ -95,7 +95,7 @@ public class Agent {
         int maxPawnDifference = -1;
         int[] maxPawnMove = new int[2];
         int[] old = self.getPos();
-        int[] instruction = new int[4];
+        int[] action = new int[4];
         boolean winning = false;
 
         // calculate the minimum distance with every pawn move
@@ -121,7 +121,7 @@ public class Agent {
         // prioritize moves which win immediately
         for (List<Integer> move : validPawnMoves) {
             if (move.get(1) == self.getYGoal()) {
-                instruction = encodeInstruction(new int[]{move.get(0), move.get(1)});
+                action = encodeAction(new int[]{move.get(0), move.get(1)});
                 winning = true;
             }
         }
@@ -129,13 +129,13 @@ public class Agent {
         // if there are no immediately winning moves, apply the threshold
         if (!winning) {
             if (maxWallDifference >= WALL_DIFF_THRESHOLD && maxWallDifference >= maxPawnDifference) {
-                instruction = encodeInstruction(maxWall.getPos(), maxWall.isVertical());
+                action = encodeAction(maxWall.getPos(), maxWall.isVertical());
             } else {
-                instruction = encodeInstruction(maxPawnMove);
+                action = encodeAction(maxPawnMove);
             }
         }
 
-        return instruction;
+        return action;
     }
 
     /**
@@ -204,15 +204,175 @@ public class Agent {
     }
 
     /**
-     * getInstructionHard method
+     * getActionHard method
      * <p>
      * Returns the move that the computer will make (hard)
-     *
+     * Implements the minimax algorithm with a depth of 5 (without a-b pruning)
      * @param self  The pawn that the computer is controlling
      * @param board The current state of the board
      * @return int[] - The move that the computer will make
      */
-    public int[] getInstructionHard(Pawn self, Board board) {
-        return getInstructionEasy(self, board);
+    public int[] getActionHard(Pawn self, Board board) {
+        List<List<Integer>> children = getChildren(board);
+        int[] action = new int[5];
+        int maxEval = Integer.MIN_VALUE;
+
+        for (List<Integer> child : children) {
+            int[] actionChild = new int[]{child.get(0), child.get(1), child.get(2), child.get(3)};
+            Board next = board.copy();
+            next.doAction(actionChild);
+            int eval = minimax(next, 2, self.getId(), new HashSet<Board>(), eval(next, self.getId()));
+
+            // check if the evaluation is greater than the maximum evaluation
+            if (eval > maxEval) {
+                maxEval = eval;
+                action = actionChild;
+            }
+        }
+
+        if (maxEval == -1) action = getActionEasy(self, board);
+
+        return action;
+    }
+
+    /**
+     * minimax method
+     * <p>
+     * Implements the minimax algorithm (without a-b pruning)
+     *
+     * @param position         The current state of the board
+     * @param depth            The depth of the search
+     * @param maximizingPlayer The player to maximize
+     * @param previousEval     The previous evaluation
+     * @return int[] - The evaluation of the move
+     */
+    private int minimax(Board position, int depth, int maximizingPlayer, Set<Board> visited, int previousEval) {
+        // declare variables
+        int EVAL_THRESHOLD = 2;
+        int eval = -1;
+        int maxEval = Integer.MIN_VALUE;
+        int minEval = Integer.MAX_VALUE;
+        Board next;
+        int evalChild;
+
+        // if the depth is 0 or the game is over, return the static evaluation of the move
+        if (depth == 0 || position.isGameOver()) {
+            eval = eval(position, maximizingPlayer);
+        }
+
+        // return early if the eval is beyond a set threshold
+        else if (eval(position, maximizingPlayer) - previousEval >= EVAL_THRESHOLD) {
+            eval = eval(position, maximizingPlayer);
+        }
+
+        // if the current player is the maximizing player, find the move with the maximum evaluation using recursion
+        else if (position.getCurrentPlayer() == maximizingPlayer) {
+            // loop over each possible move from the current position
+            for (List<Integer> child : getChildren(position)) {
+                int[] actionChild = new int[]{child.get(0), child.get(1), child.get(2), child.get(3)};
+
+                // create a temporary board and apply the action
+                next = position.copy();
+                next.doAction(actionChild);
+
+                // recursively call the minimax function with the temporary board if the position has not been visited
+                // and if the move is not significantly worse than the current eval
+                if (!visited.contains(next) && eval(position, maximizingPlayer) >= eval(next, maximizingPlayer)) {
+                    visited.add(next);
+                    evalChild = minimax(next, depth - 1, maximizingPlayer, visited, eval(position, maximizingPlayer));
+
+                    // if the evaluation of the move is greater than the maximum evaluation,
+                    // update the maximum evaluation
+                    if (evalChild > maxEval) {
+                        maxEval = evalChild;
+                        eval = eval(next, maximizingPlayer);
+                    }
+                }
+            }
+        }
+
+        // if the current player is the minimizing player, find the move with the minimum evaluation using recursion
+        else {
+            // loop over each possible move from the current position
+            for (List<Integer> child : getChildren(position)) {
+                int[] actionChild = new int[]{child.get(0), child.get(1), child.get(2), child.get(3)};
+
+                // create a temporary board and apply the action
+                next = position.copy();
+                next.doAction(actionChild);
+
+                // recursively call the minimax function with the temporary board if the position has not been visited
+                if (!visited.contains(next)) {
+                    visited.add(next);
+                    evalChild = minimax(next, depth - 1, maximizingPlayer, visited, eval(position, maximizingPlayer));
+
+                    // if the evaluation of the move is less than the maximum evaluation, update the maximum evaluation
+                    if (evalChild < minEval) {
+                        minEval = evalChild;
+                        eval = eval(next, maximizingPlayer);
+                    }
+                }
+            }
+        }
+
+        return eval;
+    }
+
+    /**
+     * eval method
+     * <p>
+     * Evaluates the current state of the board as the difference between the distance from
+     * the pawn to the goal and the distance from the enemy to their goal
+     *
+     * @param position         The current state of the board
+     * @param maximizingPlayer The player to maximize
+     * @return int - The evaluation of the board
+     */
+    private int eval(Board position, int maximizingPlayer) {
+        return (calcDistance(position.getEnemy(position.getPawn(maximizingPlayer)), position) -
+                calcDistance(position.getPawn(maximizingPlayer), position));
+    }
+
+    /**
+     * getChildren method
+     * <p>
+     * Returns a list of all possible moves from the current position
+     *
+     * @param position The current state of the board
+     * @return List<List < Integer>> - A list of all possible moves
+     */
+    private List<List<Integer>> getChildren(Board position) {
+        // declare variables
+        List<List<Integer>> children = new ArrayList<List<Integer>>();
+        int[] action;
+        List<Integer> actionColl;
+
+        // loop over every pawn move
+        for (List<Integer> move : position.calcValidPawnMoves(position.getPawn(position.getCurrentPlayer()))) {
+            // encode it and add it to the list of children
+            action = encodeAction(new int[]{move.get(0), move.get(1)});
+            actionColl = new ArrayList<Integer>();
+            actionColl.add(action[0]);
+            actionColl.add(action[1]);
+            actionColl.add(action[2]);
+            actionColl.add(action[3]);
+
+            children.add(actionColl);
+        }
+
+        // loop over every wall placement
+        for (Wall wall : position.calcValidWallPlacements(position.getPawn(position.getCurrentPlayer()))) {
+            // encode it and add it to the list of children
+            action = encodeAction(wall.getPos(), wall.isVertical());
+            actionColl = new ArrayList<Integer>();
+            actionColl.add(action[0]);
+            actionColl.add(action[1]);
+            actionColl.add(action[2]);
+            actionColl.add(action[3]);
+
+            children.add(actionColl);
+        }
+
+        return children;
     }
 }

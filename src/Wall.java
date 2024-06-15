@@ -103,4 +103,28 @@ public class Wall {
 
         return blocking;
     }
+
+    /**
+     * equals method
+     * <p>
+     * Checks if two walls are equal
+     *
+     * @param obj The object to compare to
+     * @return boolean - Whether the walls are equal
+     */
+    @Override
+    public boolean equals(Object obj) {
+        boolean equal = false;
+
+        if (obj instanceof Wall) {
+            Wall wall = (Wall) obj;
+            if (wall.getOwner() == this.owner &&
+                    wall.isVertical() == this.vertical &&
+                    wall.getPos()[0] == this.pos[0] &&
+                    wall.getPos()[1] == this.pos[1]) {
+                equal = true;
+            }
+        }
+        return equal;
+    }
 }
