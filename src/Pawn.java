@@ -113,6 +113,17 @@ public class Pawn {
     }
 
     /**
+     * getYGoal method
+     * <p>
+     * Returns the y-coordinate of the goal for the pawn
+     *
+     * @return int - The y-coordinate of the goal
+     */
+    public int getYGoal() {
+        return id == 1 ? 8 : 0;
+    }
+
+    /**
      * move method
      * <p>
      * Moves the pawn's position (does not validate)

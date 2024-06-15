@@ -1,5 +1,5 @@
 O f3: Human
-X e8: Human
+X e8: Computer
 
 12 {O: 6 , X: 6 }:
 | e4: X
@@ -15,4 +15,4 @@ X e8: Human
 – a7: O
 – a6: O
 
-Next Move: X
+Next Move: O

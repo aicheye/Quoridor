@@ -15,11 +15,11 @@ public class Wall {
      * Wall method
      * <p>
      * Constructor for Wall
+     * @param owner    The id of the player who owns the wall
      * @param pos      The position of the wall
      * @param vertical True if the wall is vertical, false if the wall is horizontal
-     * @param owner    The id of the player who owns the wall
      */
-    public Wall(int[] pos, boolean vertical, int owner) {
+    public Wall(int owner, int[] pos, boolean vertical) {
         this.pos = pos;
         this.vertical = vertical;
         this.owner = owner;

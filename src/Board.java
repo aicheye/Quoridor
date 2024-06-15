@@ -61,6 +61,19 @@ public class Board {
     }
 
     /**
+     * getEnemy method
+     * <p>
+     * Getter for the opposite player
+     *
+     * @param self The player to check
+     * @return Pawn - The opposite player
+     */
+    public Pawn getEnemy(Pawn self) {
+        if (self.getId() == 1) return p2;
+        else return p1;
+    }
+
+    /**
      * getWallsRemaining method
      * <p>
      * Getter for the number of walls remaining
@@ -306,8 +319,8 @@ public class Board {
 
         // check if the owner has any walls left and call validateWallPos
         return wallsRemaining[owner.getId() - 1] > 0 &&
-                validateWallPos(new Wall(pos, vertical, owner.getId()), walls) &&
-                !isWallBlockingPath(other, new Wall(pos, vertical, owner.getId()));
+                validateWallPos(new Wall(owner.getId(), pos, vertical), walls) &&
+                !isWallBlockingPath(other, new Wall(owner.getId(), pos, vertical));
     }
 
     /**
@@ -497,7 +510,7 @@ public class Board {
                         for (char jumpDir : jumpChecks) {
                             // check if there are no walls blocking the direction and it is a valid position
                             if (!isAnyWallBlocking(other.getPos(), jumpDir) &&
-                                    validatePawnPos(calcNewPos(other.getPos(), dir))) {
+                                    validatePawnPos(calcNewPos(other.getPos(), jumpDir))) {
                                 // calculate the new position
                                 newPos = new ArrayList<Integer>();
                                 newPos.add(calcNewPos(other.getPos(), jumpDir)[0]);
@@ -531,9 +544,9 @@ public class Board {
         // iterate over all possible wall placements
         for (int i = 0; i < SIZE - 1; i++) {
             for (int j = 1; j < SIZE; j++) {
-                wall = new Wall(new int[]{i, j}, true, self.getId());
+                wall = new Wall(self.getId(), new int[]{i, j}, true);
                 if (validateWallPlace(self, new int[]{i, j}, true)) validWalls.add(wall);
-                wall = new Wall(new int[]{i, j}, false, self.getId());
+                wall = new Wall(self.getId(), new int[]{i, j}, false);
                 if (validateWallPlace(self, new int[]{i, j}, false)) validWalls.add(wall);
             }
         }
@@ -603,12 +616,52 @@ public class Board {
 
         // check if the new position is a valid move
         if (validateWallPlace(owner, pos, vertical)) {
-            walls.add(new Wall(pos, vertical, owner.getId()));
+            walls.add(new Wall(owner.getId(), pos, vertical));
             wallsRemaining[owner.getId() - 1]--;
             success = true;
         }
 
         return success;
+    }
+
+    /**
+     * placeWallTemp method
+     * <p>
+     * Places a wall without modifying wallsRemaining
+     *
+     * @param pos      The position of the wall
+     * @param vertical Whether the wall is vertical
+     * @param owner    The owner of the wall
+     */
+    public void placeWallTemp(Pawn owner, int[] pos, boolean vertical) {
+        // check if the new position is a valid move
+        if (validateWallPlace(owner, pos, vertical)) {
+            walls.add(new Wall(owner.getId(), pos, vertical));
+        }
+    }
+
+    /**
+     * removeWall method
+     * <p>
+     * Removes a wall from the set of walls
+     *
+     * @param pos The position of the wall to remove
+     */
+    public void removeWall(int[] pos) {
+        // declare variables
+        boolean success = false;
+        Wall toRemove = null;
+
+        // check if the wall is in the set of walls
+        for (Wall w : walls) {
+            if (w.getPos() == pos) {
+                toRemove = w;
+                success = true;
+            }
+        }
+
+        // remove the wall
+        if (success) walls.remove(toRemove);
     }
 
     /**
@@ -624,10 +677,9 @@ public class Board {
         // declare variables
         List<List<Integer>> queue = new ArrayList<List<Integer>>();
         Set<List<Integer>> visited = new HashSet<List<Integer>>();
-        int end = 0;
-        if (self.getId() == 1) end = 8;
+        int end = self.getYGoal();
         int[] old = self.getPos();
-        List<Integer> next;
+        List<Integer> curr;
         boolean blocking = true;
 
         // temporarily add the new wall to the set of all walls
@@ -636,16 +688,15 @@ public class Board {
         // calculate all valid pawn positions
         for (List<Integer> move : calcValidPawnMoves(self)) {
             if (move.get(1) == end) blocking = false;
-            if (!visited.contains(move)) {
-                queue.add(move);
-                visited.add(move);
-            }
+            queue.add(move);
         }
 
         // loop until we have visited all possible squares the pawn can reach or until we reach the end of the board
         while (blocking && queue.size() > 0) {
-            next = queue.get(0);
-            self.move(new int[]{next.get(0), next.get(1)});
+            curr = queue.remove(0);
+            visited.add(curr);
+
+            self.move(new int[]{curr.get(0), curr.get(1)});
 
             // calculate all valid pawn positions
             for (List<Integer> move : calcValidPawnMoves(self)) {
@@ -655,8 +706,6 @@ public class Board {
                     visited.add(move);
                 }
             }
-
-            queue.remove(0);
         }
 
         // remove the new wall from the set of all walls and return the pawn to the original position
