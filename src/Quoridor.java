@@ -15,7 +15,7 @@ public class Quoridor {
     // declare variables
     private static Scanner sc = new Scanner(System.in);
     private static Board board;
-    // private static Computer p2Computer;
+    private static Agent p2Agent;
     private static boolean abort = false;
 
     /**
@@ -264,6 +264,7 @@ public class Quoridor {
         String posChoice;
         List<String> allValidWallStrings = new ArrayList<String>();
         int[] userWall = new int[]{-1, -1, -1, -1};
+        boolean quit = false;
 
         // check if the user has any remaining walls
         if (board.getWallsRemaining(board.getPawn(current)) <= 0) {
@@ -299,11 +300,14 @@ public class Quoridor {
             if (allValidWalls.get(1).size() == 0) {
                 System.out.print("You can only place a horizontal wall. Continue (Y/N)? > ");
                 if (inputOneChar() == 'Y') vertical = 0;
+                else quit = true;
             }
             if (allValidWalls.get(0).size() == 0) {
                 System.out.print("You can only place a vertical wall. Continue (Y/N)? > ");
                 if (inputOneChar() == 'Y') vertical = 1;
-            } else {
+                else quit = true;
+            }
+            if (allValidWalls.get(1).size() > 0 && allValidWalls.get(0).size() > 0 && !quit) {
                 // output menu
                 System.out.println("\n-------- Select an Orientation --------\n");
 
@@ -320,12 +324,13 @@ public class Quoridor {
                     // validate input
                     if (orientationChoice == 'V') vertical = 1;
                     else if (orientationChoice == 'H') vertical = 0;
+                    else if (orientationChoice == 'Q') quit = true;
                     else System.out.println("**ERR: Please select a valid orientation (or Q to quit)**");
                 }
             }
 
             // output the menu based on the given orientation (if the user has chosen to continue)
-            if (vertical != -1) {
+            if (vertical != -1 && !quit) {
                 // get all valid wall placements as strings
                 for (List<Integer> move : allValidWalls.get(vertical)) {
                     allValidWallStrings.add(posArrToStr(new int[]{move.get(0), move.get(1)}));
@@ -334,17 +339,18 @@ public class Quoridor {
                 // keep looping until we get a valid choice
                 do {
                     // take user input
-                    System.out.print("\nEnter the NW square of the wall you would like to place (or Q to quit) > ");
+                    System.out.print("Enter the NW square of the wall you would like to place (or Q to quit) > ");
                     posChoice = sc.nextLine().toLowerCase();
 
                     // check if it is a valid move
-                    if (!allValidWallStrings.contains(posChoice)) {
+                    if (posChoice.length() > 0 && posChoice.charAt(0) == 'q') quit = true;
+                    else if (!allValidWallStrings.contains(posChoice))
                         System.out.println("**ERR: You cannot place a wall on that square.**");
-                    }
-                } while (!allValidWallStrings.contains(posChoice));
+                } while (!allValidWallStrings.contains(posChoice) && !quit);
 
                 // create a new array to return
-                userWall = new int[]{posStrToArr(posChoice)[0], posStrToArr(posChoice)[1], vertical, current};
+                if (!quit)
+                    userWall = new int[]{posStrToArr(posChoice)[0], posStrToArr(posChoice)[1], vertical, current};
             }
         }
 
@@ -494,7 +500,7 @@ public class Quoridor {
                 if (Board.validatePawnPos(p2Pos)) {
                     p2 = new Pawn(p2Pos, 2, p2Human); // initialize a new pawn object
 
-                    // p2Computer = p2Human ? null : new Computer(0); // initialize a new computer object
+                    p2Agent = p2Human ? null : new Agent(0); // initialize a new computer object
                 }
                 else valid = false;
             }
@@ -552,8 +558,8 @@ public class Quoridor {
                     wallOwner = chars[6] == 'O' ? 1 : 2;
 
                     // add the wall to the list if it is valid
-                    if (Board.validateWallPos(new Wall(wallPos, wallVertical, wallOwner), wallSet)) {
-                        wallSet.add(new Wall(wallPos, wallVertical, wallOwner));
+                    if (Board.validateWallPos(new Wall(wallOwner, wallPos, wallVertical), wallSet)) {
+                        wallSet.add(new Wall(wallOwner, wallPos, wallVertical));
                     }
                 }
                 else {valid = false;}
@@ -647,16 +653,20 @@ public class Quoridor {
      * Handles the main game loop
      */
     public static void gameLoop() {
+        boolean gameEnd = false;
+
         // loops until the game ends
-        while (!abort) {
+        while (!gameEnd && !abort) {
             // make the next turn
             turn();
 
+            // check if the game is over
+            if (checkWinner() != -1) {
+                gameEnd = true;
+            }
+
             // next player
             board.nextPlayer();
-
-            // return the current winner if the game ends
-            if ((checkWinner()) != -1) abort = true;
         }
     }
 
@@ -728,6 +738,51 @@ public class Quoridor {
                     break;
             }
         }
+
+        // computer's move
+        else {
+            // output display
+            System.out.println("\n    _______  _______   _______   ________  ________  ________   _______   _______ \n" +
+                    "  //       \\/       \\\\/       \\\\/        \\/    /   \\/        \\//       \\//       \\\n" +
+                    " //        /        //        //         /         /        _//        //        /\n" +
+                    "/       --/         /         //      __/        ///       //        _/        _/ \n" +
+                    "\\________/\\________/\\__/__/__/\\\\_____/  \\_______// \\_____// \\________/\\____/___/ ");
+
+            // get the move from the computer
+            System.out.println("\nThinking...");
+            int[] move = p2Agent.getInstruction(board.getPawn(board.getCurrentPlayer()), board);
+
+            // check if the move is a wall or a pawn
+            if (move[0] == 0) {
+                // move the pawn
+                if (board.movePawn(board.getPawn(board.getCurrentPlayer()), new int[]{move[1], move[2]})) {
+                    System.out.println("The computer has moved its pawn to " + posArrToStr(new int[]{move[1], move[2]}));
+
+                    // speedbump for the user
+                    System.out.print("Press [ENTER] to continue > ");
+                    sc.nextLine();
+                }
+                // output an error message if the move is invalid
+                else {
+                    System.out.println("**ERR: An unexpected issue has occurred when trying to execute the computer's move.**");
+                    abort = true;
+                }
+            } else {
+                // place the wall
+                if (board.placeWall(board.getPawn(board.getCurrentPlayer()), new int[]{move[1], move[2]}, move[3] == 1)) {
+                    System.out.println("The computer has placed a " + (move[3] == 1 ? " vertical" : " horizontal") + " wall at " + posArrToStr(new int[]{move[1], move[2]}));
+
+                    // speedbump for the user
+                    System.out.print("Press [ENTER] to continue > ");
+                    sc.nextLine();
+                }
+                // output an error message if the wall placement is invalid
+                else {
+                    System.out.println("**ERR: An unexpected issue has occurred when trying to execute the computer's placement.**");
+                    abort = true;
+                }
+            }
+        }
     }
 
     /**
@@ -739,8 +794,8 @@ public class Quoridor {
     public static int checkWinner() {
         int winner = -1;
 
-        if (board.getP1().getY() == SIZE - 1) winner = 1;
-        else if (board.getP2().getY() == 0) winner = 2;
+        if (board.getP1().getY() == board.getP1().getYGoal()) winner = 1;
+        else if (board.getP2().getY() == board.getP2().getYGoal()) winner = 2;
 
         return winner;
     }
@@ -772,7 +827,7 @@ public class Quoridor {
                         if (inputOneChar() == 'Y') board = new Board(false);
                         else board = new Board(true);
 
-                        // p2Computer = board.getP2().isHuman() ? null : new Computer(0);
+                        p2Agent = board.getP2().isHuman() ? null : new Agent(0);
 
                         break;
                     case 'L':
@@ -830,7 +885,7 @@ public class Quoridor {
                                 "| |_) | |/ _` | | | |/ _ \\ '__| | |  \\ \\ /\\ / /| | '_ \\/ __| |\n" +
                                 "|  __/| | (_| | |_| |  __/ |    | |   \\ V  V / | | | | \\__ \\_|\n" +
                                 "|_|   |_|\\__,_|\\__, |\\___|_|    |_|    \\_/\\_/  |_|_| |_|___(_)\n" +
-                                "               |___/                                          ");
+                                "               |___/                                          \n");
                     } else if (winner == 2) {
                         System.out.println("\n ____  _                         ____   __        ___           _ \n" +
                                 "|  _ \\| | __ _ _   _  ___ _ __  |___ \\  \\ \\      / (_)_ __  ___| |\n" +
@@ -848,13 +903,13 @@ public class Quoridor {
                                 "\\ \\ / /__  _   _  \\ \\      / (_)_ __ | |\n" +
                                 " \\ V / _ \\| | | |  \\ \\ /\\ / /| | '_ \\| |\n" +
                                 "  | | (_) | |_| |   \\ V  V / | | | | |_|\n" +
-                                "  |_|\\___/ \\__,_|    \\_/\\_/  |_|_| |_(_)");
+                                "  |_|\\___/ \\__,_|    \\_/\\_/  |_|_| |_(_)\n");
                     } else if (winner == 2) {
                         System.out.println("\n__   __            _                         \n" +
                                 "\\ \\ / /__  _   _  | |    ___  ___  ___       \n" +
                                 " \\ V / _ \\| | | | | |   / _ \\/ __|/ _ \\      \n" +
                                 "  | | (_) | |_| | | |__| (_) \\__ \\  __/_ _ _ \n" +
-                                "  |_|\\___/ \\__,_| |_____\\___/|___/\\___(_|_|_)");
+                                "  |_|\\___/ \\__,_| |_____\\___/|___/\\___(_|_|_)\n");
                     }
                 }
 
@@ -862,6 +917,9 @@ public class Quoridor {
                 if (!abort) {
                     System.out.print("Press [ENTER] to continue > ");
                     sc.nextLine();
+
+                    // reset the board
+                    board = null;
                 }
             }
         }
