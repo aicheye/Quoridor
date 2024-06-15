@@ -516,6 +516,32 @@ public class Board {
     }
 
     /**
+     * calcValidWallPlacements method
+     * <p>
+     * Calculates all valid wall placements
+     *
+     * @param self The pawn placing the walls
+     * @return Set<Wall> - The set of all valid wall placements
+     */
+    public Set<Wall> calcValidWallPlacements(Pawn self) {
+        // declare variables
+        Set<Wall> validWalls = new HashSet<Wall>();
+        Wall wall;
+
+        // iterate over all possible wall placements
+        for (int i = 0; i < SIZE - 1; i++) {
+            for (int j = 1; j < SIZE; j++) {
+                wall = new Wall(new int[]{i, j}, true, self.getId());
+                if (validateWallPlace(self, new int[]{i, j}, true)) validWalls.add(wall);
+                wall = new Wall(new int[]{i, j}, false, self.getId());
+                if (validateWallPlace(self, new int[]{i, j}, false)) validWalls.add(wall);
+            }
+        }
+
+        return validWalls;
+    }
+
+    /**
      * validatePawnMove method
      * <p>
      * Checks if a pawn move is valid
