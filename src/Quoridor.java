@@ -440,7 +440,7 @@ public class Quoridor {
      */
     public static void load(String filename) {
         // regex strings
-        final String PLAYERS_REGEX = "^[OX]\\s[a-i][1-9]:\\s((Human)|(Computer))$";
+        final String PLAYERS_REGEX = "^[OX]\\s[a-i][1-9]:\\s((Human)|(Computer \\(difficulty: ((normal)|(hard))\\)))$";
         final String WALLS_REGEX = "^([0-9]|(1[0-9])|(20))\\s\\{O:\\s([0-9]|(10))\\s,\\sX:\\s([0-9]|(10))\\s}:$";
         final String WALL_REGEX = "^[|–]\\s[a-i][1-9]:\\s[OX]$";
 
@@ -451,8 +451,9 @@ public class Quoridor {
         String[] split;
         int[] p1Pos, p2Pos, wallPos;
         boolean p1Human, p2Human;
+        int p2AgentDiff = -1;
         Pawn p1 = null, p2 = null;
-        int totWalls = 0, p1Walls = 11, p2Walls = 11, wallOwner;
+        int totWalls = -1, p1Walls = -1, p2Walls = -1, wallOwner;
         boolean wallVertical;
         HashSet<Wall> wallSet = new HashSet<Wall>();
         int current = -1;
@@ -477,8 +478,8 @@ public class Quoridor {
                 p1Human = chars[6] == 'H';
 
                 // check if the pawn position is valid
-                if (Board.validatePawnPos(p1Pos)) {
-                    p1 = new Pawn(p1Pos, 1, p1Human); // initialize a new pawn object
+                if (Board.validatePawnPos(p1Pos) && p1Human) {
+                    p1 = new Pawn(p1Pos, 1, true); // initialize a new pawn object
                 }
                 else valid = false;
             }
@@ -500,14 +501,20 @@ public class Quoridor {
                 if (Board.validatePawnPos(p2Pos)) {
                     p2 = new Pawn(p2Pos, 2, p2Human); // initialize a new pawn object
 
-                    p2Agent = p2Human ? null : new Agent(0); // initialize a new computer object
+                    // get the agent difficulty if the player is a computer
+                    if (!p2Human) {
+                        if (chars[28] == 'n') p2AgentDiff = 0;
+                        else if (chars[28] == 'h') p2AgentDiff = 1;
+                    }
+
+                    p2Agent = p2Human ? null : new Agent(p2AgentDiff); // initialize a new computer object
                 }
                 else valid = false;
             }
             else {valid=false;}
 
             // read the fourth line
-            br.readLine();
+            if (!br.readLine().isEmpty()) valid = false;
             line = br.readLine();
 
             // check if the line matches
@@ -575,10 +582,13 @@ public class Quoridor {
             if (p1Walls != 0 || p2Walls != 0) valid = false;
 
             // get the current player
-            br.readLine();
+            if (!br.readLine().isEmpty()) valid = false;
             line = br.readLine();
             if (line.matches("^Next Move: [OX]$")) current = line.charAt(11) == 'O' ? 1 : 2;
             else valid = false;
+
+            // check for expected EOF
+            if (br.readLine() != null) valid = false;
 
 
             // initialize the board if the load is valid
@@ -590,9 +600,7 @@ public class Quoridor {
                 System.out.println("**ERR: Invalid save file.**");
                 load(loadMenu(false));
             }
-        }
-
-        catch (IOException e) {
+        } catch (Exception e) {
             System.out.println("**ERR: File read error (does this file exist?)**");
         }
     }
@@ -750,7 +758,7 @@ public class Quoridor {
 
             // get the move from the computer
             System.out.println("\nThinking...");
-            int[] move = p2Agent.getInstruction(board.getPawn(board.getCurrentPlayer()), board);
+            int[] move = p2Agent.getAction(board.getPawn(board.getCurrentPlayer()), board);
 
             // check if the move is a wall or a pawn
             if (move[0] == 0) {
@@ -809,6 +817,7 @@ public class Quoridor {
         // declare variables
         int winner;
         String file;
+        char choice = ' ';
 
         // output main menu
         System.out.println("\n  ___                   _     _            \n" +
@@ -822,12 +831,25 @@ public class Quoridor {
             while (board == null) {
                 switch (mainMenu()) {
                     case 'N':
+                        // ask for user confirmation to play against computer
                         System.out.print("Do you want to play against a computer (Y/N)? > ");
 
-                        if (inputOneChar() == 'Y') board = new Board(false);
+                        if (inputOneChar() == 'Y') {
+                            board = new Board(false);
+
+                            // output menu for the difficulty of the computer
+                            System.out.println("\n----- Select a Difficulty -----\n");
+
+                            System.out.println("{     <E>asy                  }");
+                            System.out.println("{     <H>ard                  }");
+
+                            System.out.println("\n-------------------------------\n");
+
+                            choice = validateInput(new HashSet<Character>(Arrays.asList('E', 'H')));
+                        }
                         else board = new Board(true);
 
-                        p2Agent = board.getP2().isHuman() ? null : new Agent(0);
+                        p2Agent = board.getP2().isHuman() ? null : new Agent(choice == 'E' ? 0 : 1);
 
                         break;
                     case 'L':

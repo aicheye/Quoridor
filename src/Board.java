@@ -33,12 +33,16 @@ public class Board {
     }
 
     // declare variables
-    private final int[][] squares = new int[9][9];
+    private int[][] squares = new int[9][9];
     private Set<Wall> walls = new HashSet<Wall>();
-    private final Pawn p1;
-    private final Pawn p2;
-    private final int[] wallsRemaining = new int[2];
+    private Pawn p1;
+    private Pawn p2;
+    private int[] wallsRemaining = new int[2];
     private int current;
+
+    public Board copy() {
+        return new Board(p1.copy(), p2.copy(), new HashSet<Wall>(walls), current);
+    }
 
     /**
      * getP1 method
@@ -713,5 +717,59 @@ public class Board {
         self.move(old);
 
         return blocking;
+    }
+
+    /**
+     * isGameOver method
+     * <p>
+     * Checks if a game is over
+     * @return boolean - If the game is over
+     */
+    public boolean isGameOver() {
+        return p1.getY() == p1.getYGoal() || p2.getY() == p2.getYGoal();
+    }
+
+    /**
+     * doAction
+     * <p>
+     * Returns the winner of the game
+     * @param action The instruction to execute
+     */
+    public void doAction(int[] action) {
+        // the first element of the instruction is the type of instruction (0 for move, 1 for wall place)
+        if (action[0] == 0) movePawn(getPawn(current), new int[]{action[1], action[2]});
+        else placeWall(getPawn(current), new int[]{action[1], action[2]}, action[3] == 1);
+    }
+
+    /**
+     * equals method
+     * <p>
+     * Checks if two boards are equal
+     * @param obj The other board to compare
+     */
+    @Override
+    public boolean equals(Object obj) {
+        boolean equal = true;
+
+        if (!(obj instanceof Board)) equal = false;
+        else {
+            Board board = (Board) obj;
+
+            if (p1.getId() != board.getP1().getId() || p2.getId() != board.getP2().getId()) equal = false;
+            if (p1.getX() != board.getP1().getX() || p1.getY() != board.getP1().getY()) equal = false;
+            if (p2.getX() != board.getP2().getX() || p2.getY() != board.getP2().getY()) equal = false;
+            if (wallsRemaining[0] != board.getWallsRemaining(board.getPawn(1)) ||
+                    wallsRemaining[1] != board.getWallsRemaining(board.getPawn(2))) equal = false;
+            if (current != board.getCurrentPlayer()) equal = false;
+            if (getAllWalls().size() != board.getAllWalls().size()) equal = false;
+
+            if (equal) {
+                for (Wall w : walls) {
+                    if (!board.getAllWalls().contains(w)) equal = false;
+                }
+            }
+        }
+
+        return equal;
     }
 }
