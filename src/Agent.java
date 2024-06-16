@@ -298,6 +298,7 @@ public class Agent {
     /**
      * getChildren method
      * <p>
+     * 
      * Returns a list of all possible moves from the current position
      * @param position {@code Board} - The current state of the board
      * @return {@code List<List<Integer>>} - A list of all possible moves
