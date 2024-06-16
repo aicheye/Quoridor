@@ -2,6 +2,7 @@
  * Wall class
  * <p>
  * Represents a wall in the game of Quoridor
+ *
  * @author Sean Yang
  * @version 30/05/2024
  */
@@ -15,9 +16,10 @@ public class Wall {
      * Wall method
      * <p>
      * Constructor for Wall
-     * @param owner    The id of the player who owns the wall
-     * @param pos      The position of the wall
-     * @param vertical True if the wall is vertical, false if the wall is horizontal
+     *
+     * @param owner {@code int} - The id of the player who owns the wall
+     * @param pos {@code int[]} - The position of the wall
+     * @param vertical {@code boolean} - {@code true} if the wall is vertical, {@code false} if the wall is horizontal
      */
     public Wall(int owner, int[] pos, boolean vertical) {
         this.pos = pos;
@@ -29,7 +31,8 @@ public class Wall {
      * getPos method
      * <p>
      * Getter for the position of the wall
-     * @return int[] - The position of the wall
+     *
+     * @return {@code int[]} - The position of the wall
      */
     public int[] getPos() {
         return pos;
@@ -39,7 +42,8 @@ public class Wall {
      * isVertical method
      * <p>
      * Getter for the vertical status of the wall
-     * @return boolean - If the wall is vertical
+     *
+     * @return {@code boolean} - If the wall is vertical
      */
     public boolean isVertical() {
         return vertical;
@@ -49,7 +53,8 @@ public class Wall {
      * getOwner method
      * <p>
      * Getter for the owner of the wall
-     * @return int - The id of the owner
+     *
+     * @return {@code int} - The id of the owner
      */
     public int getOwner() {
         return owner;
@@ -59,7 +64,8 @@ public class Wall {
      * getX method
      * <p>
      * Getter for the x position of the wall
-     * @return int - The x position of the wall
+     *
+     * @return {@code int} - The x position of the wall
      */
     public int getX() {
         return getPos()[0];
@@ -69,7 +75,8 @@ public class Wall {
      * getY method
      * <p>
      * Getter for the y position of the wall
-     * @return int - The y position of the wall
+     *
+     * @return {@code int} - The y position of the wall
      */
     public int getY() {
         return getPos()[1];
@@ -79,9 +86,10 @@ public class Wall {
      * isBlocking method
      * <p>
      * Checks if the current wall is blocking a path from one square
-     * @param pos The position to start from
-     * @param dir The direction to check
-     * @return boolean - Whether the wall is blocking the direction
+     *
+     * @param pos {@code int[]} - The position to start from
+     * @param dir {@code char} - The direction to check
+     * @return {@code boolean} - Whether the wall is blocking the direction
      */
     public boolean isBlocking(int[] pos, char dir) {
         // declare variables
@@ -108,8 +116,9 @@ public class Wall {
      * equals method
      * <p>
      * Checks if two walls are equal
-     * @param obj The object to compare to
-     * @return boolean - Whether the walls are equal
+     *
+     * @param obj {@code Object} - The object to compare to
+     * @return {@code boolean} - Whether the walls are equal
      */
     @Override
     public boolean equals(Object obj) {
