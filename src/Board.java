@@ -723,7 +723,6 @@ public class Board {
      * isGameOver method
      * <p>
      * Checks if a game is over
-     *
      * @return boolean - If the game is over
      */
     public boolean isGameOver() {
@@ -734,7 +733,6 @@ public class Board {
      * doAction
      * <p>
      * Returns the winner of the game
-     *
      * @param action The instruction to execute
      */
     public void doAction(int[] action) {
@@ -747,7 +745,6 @@ public class Board {
      * equals method
      * <p>
      * Checks if two boards are equal
-     *
      * @param obj The other board to compare
      */
     @Override

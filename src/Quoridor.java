@@ -440,7 +440,7 @@ public class Quoridor {
      */
     public static void load(String filename) {
         // regex strings
-        final String PLAYERS_REGEX = "^[OX]\\s[a-i][1-9]:\\s((Human)|(Computer \\(difficulty: ((easy)|(hard))\\)))$";
+        final String PLAYERS_REGEX = "^[OX]\\s[a-i][1-9]:\\s((Human)|(Computer \\(difficulty: ((normal)|(hard))\\)))$";
         final String WALLS_REGEX = "^([0-9]|(1[0-9])|(20))\\s\\{O:\\s([0-9]|(10))\\s,\\sX:\\s([0-9]|(10))\\s}:$";
         final String WALL_REGEX = "^[|–]\\s[a-i][1-9]:\\s[OX]$";
 
@@ -503,7 +503,7 @@ public class Quoridor {
 
                     // get the agent difficulty if the player is a computer
                     if (!p2Human) {
-                        if (chars[28] == 'e') p2AgentDiff = 0;
+                        if (chars[28] == 'n') p2AgentDiff = 0;
                         else if (chars[28] == 'h') p2AgentDiff = 1;
                     }
 

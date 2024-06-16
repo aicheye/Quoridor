@@ -17,7 +17,7 @@ public class Agent {
      * <p>
      * Constructor for Computer
      *
-     * @param diff The difficulty of the computer (0 for easy, 1 for hard)
+     * @param diff The difficulty of the computer (0 for normal, 1 for hard)
      */
     public Agent(int diff) {
         this.diff = diff;
@@ -57,22 +57,22 @@ public class Agent {
      */
     public int[] getAction(Pawn self, Board board) {
         if (diff == 0) {
-            return getActionEasy(self, board);
+            return getActionNormal(self, board);
         } else {
             return getActionHard(self, board);
         }
     }
 
     /**
-     * getActionEasy method
+     * getActionNormal method
      * <p>
-     * Returns the move that the computer will make (easy)
+     * Returns the move that the computer will make (normal)
      *
      * @param self  The pawn that the computer is controlling
      * @param board The current state of the board
      * @return int[] - The move that the computer will make
      */
-    public int[] getActionEasy(Pawn self, Board board) {
+    public int[] getActionNormal(Pawn self, Board board) {
         // hidden constant: adjusted based on the number of walls already on the board
         int WALL_DIFF_THRESHOLD;
         if (board.getWallsRemaining(self) == 10) {
@@ -207,7 +207,7 @@ public class Agent {
      * getActionHard method
      * <p>
      * Returns the move that the computer will make (hard)
-     * Implements the minimax algorithm with a depth of 5 (without a-b pruning)
+     * Implements the minimax algorithm with a depth of 3 (without a-b pruning)
      * @param self  The pawn that the computer is controlling
      * @param board The current state of the board
      * @return int[] - The move that the computer will make
@@ -217,20 +217,28 @@ public class Agent {
         int[] action = new int[5];
         int maxEval = Integer.MIN_VALUE;
 
-        for (List<Integer> child : children) {
-            int[] actionChild = new int[]{child.get(0), child.get(1), child.get(2), child.get(3)};
-            Board next = board.copy();
-            next.doAction(actionChild);
-            int eval = minimax(next, 2, self.getId(), new HashSet<Board>(), eval(next, self.getId()));
+        // check if the computer has no more walls to place
+        if (board.getWallsRemaining(self) == 0) {
+            action = getActionNormal(self, board);
+        }
 
-            // check if the evaluation is greater than the maximum evaluation
-            if (eval > maxEval) {
-                maxEval = eval;
-                action = actionChild;
+        // if the computer still has walls, run the minimax algorithm
+        else {
+            for (List<Integer> child : children) {
+                int[] actionChild = new int[]{child.get(0), child.get(1), child.get(2), child.get(3)};
+                Board next = board.copy();
+                next.doAction(actionChild);
+                int eval = minimax(next, 2, self.getId(), Integer.MIN_VALUE, Integer.MAX_VALUE, new HashSet<Board>());
+
+                // check if the evaluation is greater than the maximum evaluation
+                if (eval > maxEval) {
+                    maxEval = eval;
+                    action = actionChild;
+                }
             }
         }
 
-        if (maxEval == -1) action = getActionEasy(self, board);
+        if (maxEval == -1) action = getActionNormal(self, board);
 
         return action;
     }
@@ -239,29 +247,22 @@ public class Agent {
      * minimax method
      * <p>
      * Implements the minimax algorithm (without a-b pruning)
-     *
-     * @param position         The current state of the board
-     * @param depth            The depth of the search
+     * @param position The current state of the board
+     * @param depth The depth of the search
      * @param maximizingPlayer The player to maximize
-     * @param previousEval     The previous evaluation
      * @return int[] - The evaluation of the move
      */
-    private int minimax(Board position, int depth, int maximizingPlayer, Set<Board> visited, int previousEval) {
+    private int minimax(Board position, int depth, int alpha, int beta, int maximizingPlayer, Set<Board> visited) {
         // declare variables
-        int EVAL_THRESHOLD = 2;
         int eval = -1;
         int maxEval = Integer.MIN_VALUE;
         int minEval = Integer.MAX_VALUE;
         Board next;
         int evalChild;
+        boolean alphaBetaPass = true;
 
         // if the depth is 0 or the game is over, return the static evaluation of the move
         if (depth == 0 || position.isGameOver()) {
-            eval = eval(position, maximizingPlayer);
-        }
-
-        // return early if the eval is beyond a set threshold
-        else if (eval(position, maximizingPlayer) - previousEval >= EVAL_THRESHOLD) {
             eval = eval(position, maximizingPlayer);
         }
 
@@ -269,23 +270,33 @@ public class Agent {
         else if (position.getCurrentPlayer() == maximizingPlayer) {
             // loop over each possible move from the current position
             for (List<Integer> child : getChildren(position)) {
-                int[] actionChild = new int[]{child.get(0), child.get(1), child.get(2), child.get(3)};
+                // check if this branch has passed alpha and beta pruning
+                if (alphaBetaPass) {
+                    int[] actionChild = new int[]{child.get(0), child.get(1), child.get(2), child.get(3)};
 
-                // create a temporary board and apply the action
-                next = position.copy();
-                next.doAction(actionChild);
+                    // create a temporary board and apply the action
+                    next = position.copy();
+                    next.doAction(actionChild);
 
-                // recursively call the minimax function with the temporary board if the position has not been visited
-                // and if the move is not significantly worse than the current eval
-                if (!visited.contains(next) && eval(position, maximizingPlayer) >= eval(next, maximizingPlayer)) {
-                    visited.add(next);
-                    evalChild = minimax(next, depth - 1, maximizingPlayer, visited, eval(position, maximizingPlayer));
+                    // recursively call the minimax function with the temporary board
+                    // if the position has not been visited
+                    // and if the move is not significantly worse than the current eval
+                    if (!visited.contains(next) && eval(position, maximizingPlayer) >= eval(next, maximizingPlayer)) {
+                        visited.add(next);
+                        evalChild = minimax(next, depth - 1, maximizingPlayer, alpha, beta, visited);
 
-                    // if the evaluation of the move is greater than the maximum evaluation,
-                    // update the maximum evaluation
-                    if (evalChild > maxEval) {
-                        maxEval = evalChild;
-                        eval = eval(next, maximizingPlayer);
+                        // if the evaluation of the move is greater than the maximum evaluation,
+                        // update the maximum evaluation
+                        if (evalChild > maxEval) {
+                            maxEval = evalChild;
+                            eval = eval(next, maximizingPlayer);
+                        }
+
+                        // apply alpha-beta pruning
+                        alpha = Math.max(alpha, evalChild);
+                        if (beta <= alpha) {
+                            alphaBetaPass = false;
+                        }
                     }
                 }
             }
@@ -295,21 +306,32 @@ public class Agent {
         else {
             // loop over each possible move from the current position
             for (List<Integer> child : getChildren(position)) {
-                int[] actionChild = new int[]{child.get(0), child.get(1), child.get(2), child.get(3)};
+                // check if this branch has passed alpha and beta pruning
+                if (alphaBetaPass) {
+                    int[] actionChild = new int[]{child.get(0), child.get(1), child.get(2), child.get(3)};
 
-                // create a temporary board and apply the action
-                next = position.copy();
-                next.doAction(actionChild);
+                    // create a temporary board and apply the action
+                    next = position.copy();
+                    next.doAction(actionChild);
 
-                // recursively call the minimax function with the temporary board if the position has not been visited
-                if (!visited.contains(next)) {
-                    visited.add(next);
-                    evalChild = minimax(next, depth - 1, maximizingPlayer, visited, eval(position, maximizingPlayer));
+                    // recursively call the minimax function with the temporary board
+                    // if the position has not been visited
+                    if (!visited.contains(next)) {
+                        visited.add(next);
+                        evalChild = minimax(next, depth - 1, maximizingPlayer, alpha, beta, visited);
 
-                    // if the evaluation of the move is less than the maximum evaluation, update the maximum evaluation
-                    if (evalChild < minEval) {
-                        minEval = evalChild;
-                        eval = eval(next, maximizingPlayer);
+                        // if the evaluation of the move is less than the maximum evaluation,
+                        // update the maximum evaluation
+                        if (evalChild < minEval) {
+                            minEval = evalChild;
+                            eval = eval(next, maximizingPlayer);
+                        }
+
+                        // apply alpha-beta pruning
+                        beta = Math.min(beta, evalChild);
+                        if (beta <= alpha) {
+                            alphaBetaPass = false;
+                        }
                     }
                 }
             }
@@ -323,8 +345,7 @@ public class Agent {
      * <p>
      * Evaluates the current state of the board as the difference between the distance from
      * the pawn to the goal and the distance from the enemy to their goal
-     *
-     * @param position         The current state of the board
+     * @param position The current state of the board
      * @param maximizingPlayer The player to maximize
      * @return int - The evaluation of the board
      */
@@ -337,7 +358,6 @@ public class Agent {
      * getChildren method
      * <p>
      * Returns a list of all possible moves from the current position
-     *
      * @param position The current state of the board
      * @return List<List < Integer>> - A list of all possible moves
      */

@@ -1,5 +1,5 @@
 O f3: Human
-X e8: Computer (difficulty: easy)
+X e8: Computer (difficulty: hard)
 
 12 {O: 6 , X: 6 }:
 | e4: X

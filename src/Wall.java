@@ -108,7 +108,6 @@ public class Wall {
      * equals method
      * <p>
      * Checks if two walls are equal
-     *
      * @param obj The object to compare to
      * @return boolean - Whether the walls are equal
      */
