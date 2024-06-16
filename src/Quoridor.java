@@ -5,10 +5,12 @@ import java.io.*;
  * Quoridor.java
  * <p>
  * Represents the game of Quoridor
+ *
  * @author Sean Yang
  * @version 30/05/2024
  */
 public class Quoridor {
+    // declare constants
     private static final int SIZE = Board.getSize();
     private static final int MAX_WALLS = Board.getMaxWalls();
 
@@ -19,27 +21,12 @@ public class Quoridor {
     private static boolean abort = false;
 
     /**
-     * nextChar method
-     * <p>
-     * Helper method to allow inputs to get the first character of the user's input
-     *
-     * @return char - The character
-     */
-    private static char inputOneChar() {
-        String input = sc.nextLine();
-        char choice = ' ';
-        if (input.length() > 0) choice = input.charAt(0);
-
-        return Character.toUpperCase(choice);
-    }
-
-    /**
      * posStrToArr method
      * <p>
-     * Helper method to convert a string position (such as e7) to an integer array
+     * Helper method to convert a {@code String} position (such as e7) to an {@code int[]}
      *
-     * @param posStr The string to convert
-     * @return int[] - The position as an array
+     * @param posStr {@code String} - The string to convert
+     * @return {@code int[]} - The position as an array
      */
     private static int[] posStrToArr(String posStr) {
         int x = posStr.charAt(0) - 'a';
@@ -51,10 +38,10 @@ public class Quoridor {
     /**
      * posArrToStr method
      * <p>
-     * Helper method to convert an integer array to a string position (such as e7)
+     * Helper method to convert an {@code int[]} to a {@code String} position (such as e7)
      *
-     * @param posArr The array to convert
-     * @return String - The position as a string
+     * @param posArr {@code int[]} - The array to convert
+     * @return {@code String} - The position as a string
      */
     private static String posArrToStr(int[] posArr) {
         char x = (char) (posArr[0] + 'a');
@@ -63,14 +50,54 @@ public class Quoridor {
         return String.valueOf(x) + y;
     }
 
+    /**
+     * nextChar method
+     * <p>
+     * Helper method to allow inputs to get the first character of the user's input
+     *
+     * @return {@code char} - The option selected
+     */
+    private static char inputOneChar() {
+        String input = sc.nextLine();
+        char choice = ' ';
+        if (input.length() > 0) choice = input.charAt(0);
+
+        return Character.toUpperCase(choice);
+    }
+
+    /**
+     * validateInput method
+     * <p>
+     * Helper method to validate the user's input
+     *
+     * @param options {@code Set<Character>} - The options to validate against
+     * @return {@code char} - The selection of the user
+     */
+    private static char validateInput(Set<Character> options) {
+        char sel;
+
+        do {
+            // take user input
+            System.out.print("Enter a Selection > ");
+            sel = inputOneChar();
+
+            // check if selection is invalid
+            if (!options.contains(Character.toUpperCase(sel))) {
+                System.out.println("**ERR: Please select a valid option.**");
+            }
+        } while (!options.contains(Character.toUpperCase(sel)));
+
+        return sel;
+    }
 
     /**
      * menu method
      * <p>
      * Outputs the main menu
-     * @return char - The selection of the user
+     *
+     * @return {@code char} - The selection of the user
      */
-    public static char mainMenu() {
+    private static char mainMenu() {
         // declare variables
         Set<Character> options = new HashSet<Character>();
         options.add('N');
@@ -90,38 +117,22 @@ public class Quoridor {
         return validateInput(options);
     }
 
-    private static char validateInput(Set<Character> options) {
-        char sel;
-
-        do {
-            // take user input
-            System.out.print("Enter a Selection > ");
-            sel = inputOneChar();
-
-            // check if selection is invalid
-            if (!options.contains(Character.toUpperCase(sel))) {
-                System.out.println("**ERR: Please select a valid option.**");
-            }
-        } while (!options.contains(Character.toUpperCase(sel)));
-
-        return sel;
-    }
-
     /**
      * loadMenu method
      * <p>
      * Outputs the load game menu
-     * @param showFiles Whether to show the files again
-     * @return String - The save file chosen
+     *
+     * @param showFiles {@code boolean} - Whether to show the files again
+     * @return {@code String} - The save file chosen
      */
-    public static String loadMenu(boolean showFiles) {
+    private static String loadMenu(boolean showFiles) {
         // declare variables
         final File folder = new File("./saves");
         File[] listOfSaves = folder.listFiles();
 
         List<String> saves = new ArrayList<String>();
 
-        char choice;
+        int choice;
         String file = null;
 
         // loop over each file
@@ -153,10 +164,10 @@ public class Quoridor {
         while (file == null) {
             // take user input and return it if valid
             System.out.print("Enter a selection (or Q to quit) > ");
-            choice = inputOneChar();
+            choice = Integer.parseInt(sc.nextLine()) - 1;
 
             // check if it is a valid file
-            if (0 <= choice - '1' && choice - '1' < saves.size()) file = "./saves/" + saves.get(choice - '1') + ".txt";
+            if (0 <= choice && choice < saves.size()) file = "./saves/" + saves.get(choice) + ".txt";
 
                 // check if the user chose to quit the loop
             else if (choice == 'Q') file = "Q";
@@ -170,12 +181,88 @@ public class Quoridor {
     }
 
     /**
+     * saveMenu method
+     * <p>
+     * Method to allow the user to choose the name of their save file
+     *
+     * @return {@code String} - the name of the file
+     */
+    private static String saveMenu() {
+        // declare variables
+        final File folder = new File("./saves");
+        File[] listOfSaves = folder.listFiles();
+        final String FILENAME_REGEX = "^[a-zA-Z0-9\\-_]*$";
+        final String[] forbidden = new String[]{"CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"};
+        String filename = "";
+        String userString;
+        boolean valid;
+
+        List<String> saves = new ArrayList<String>();
+
+        // loop over each file
+        if (listOfSaves != null) {
+            for (File save : listOfSaves) {
+                if (save.isFile()) {
+                    saves.add(save.getName().substring(0, save.getName().length() - 4)); // add to ArrayList
+                }
+            }
+        }
+
+        // keep looping until we have a valid filename
+        while (filename.isEmpty()) {
+            valid = true;
+
+            // take user input
+            System.out.println("\nName your save file below using alphanumeric, hyphens, and underscores");
+            System.out.print("Enter between 4-32 characters (or Q to quit) > ");
+            userString = sc.nextLine();
+
+            if (userString.equalsIgnoreCase("Q")) filename = "Q";
+
+            // check if the user string uses the permitted characters
+            if (!userString.matches(FILENAME_REGEX)) {
+                System.out.println("**ERR: Please only use permitted characters.**");
+                valid = false;
+            }
+
+            // check if the user string is too short or too long
+            if ((userString.length() < 3 || userString.length() > 32) && !userString.equalsIgnoreCase("Q")) {
+                System.out.println("**ERR: Please enter between 4 and 32 characters.**");
+                valid = false;
+            }
+
+            // check if the save file already exists
+            for (String s : saves) {
+                if (s.equals(userString)) {
+                    System.out.println("This save file already exists.");
+                    System.out.print("Do you want to override your previous save (Y/N)? > ");
+                    if (inputOneChar() == 'Y') valid = true;
+                    else valid = false;
+                }
+            }
+
+            // check if the file name is allowed in windows
+            for (String s : forbidden) {
+                if (s.equals(userString)) {
+                    System.out.println("**ERR: This filename is not allowed.**");
+                    valid = false;
+                }
+            }
+
+            if (valid) filename = userString;
+        }
+
+        return filename;
+    }
+
+    /**
      * turnMenu method
      * <p>
      * Menu for selecting a turn option
-     * @return the choice of the user
+     *
+     * @return {@code char} - the choice of the user
      */
-    public static char turnMenu() {
+    private static char turnMenu() {
         // declare variables
         Set<Character> options = new HashSet<Character>();
         options.add('M');
@@ -206,9 +293,9 @@ public class Quoridor {
      * moveMenu method
      * <p>
      * Displays a menu to allow the user to choose a square to move to
-     * @return int[] - The position the user selects
+     * @return {@code int[]} - The position the user selects
      */
-    public static int[] moveMenu() {
+    private static int[] moveMenu() {
         // declare variables
         int current = board.getCurrentPlayer();
         String choice;
@@ -250,11 +337,12 @@ public class Quoridor {
     /**
      * wallMenu method
      * <p>
-     * Displays a menu to allow the user to choose where to place
-     * @return int[] - An array containing the x position of the wall, the y position of the wall, and whether the wall is vertical.
+     * Displays a menu to allow the user to place a wall on the board
+     *
+     * @return {@code int[]} - An array containing the x position of the wall, the y position of the wall, and whether the wall is vertical.
      * Returns an array filled with -1 if the user chooses to quit.
      */
-    public static int[] wallMenu() {
+    private static int[] wallMenu() {
         // declare variables
         int current = board.getCurrentPlayer();
         List<Set<List<Integer>>> allValidWalls = new ArrayList<Set<List<Integer>>>();
@@ -358,87 +446,13 @@ public class Quoridor {
     }
 
     /**
-     * saveMenu method
-     * <p>
-     * Method to allow the user to choose the name of their save file
-     *
-     * @return String - the name of the file
-     */
-    public static String saveMenu() {
-        // declare variables
-        final File folder = new File("./saves");
-        File[] listOfSaves = folder.listFiles();
-        final String FILENAME_REGEX = "^[a-zA-Z0-9\\-_]*$";
-        final String[] forbidden = new String[]{"CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"};
-        String filename = "";
-        String userString;
-        boolean valid;
-
-        List<String> saves = new ArrayList<String>();
-
-        // loop over each file
-        if (listOfSaves != null) {
-            for (File save : listOfSaves) {
-                if (save.isFile()) {
-                    saves.add(save.getName().substring(0, save.getName().length() - 4)); // add to ArrayList
-                }
-            }
-        }
-
-        // keep looping until we have a valid filename
-        while (filename.isEmpty()) {
-            valid = true;
-
-            // take user input
-            System.out.println("\nName your save file below using alphanumeric, hyphens, and underscores");
-            System.out.print("Enter between 4-32 characters (or Q to quit) > ");
-            userString = sc.nextLine();
-
-            if (userString.equalsIgnoreCase("Q")) filename = "Q";
-
-            // check if the user string uses the permitted characters
-            if (!userString.matches(FILENAME_REGEX)) {
-                System.out.println("**ERR: Please only use permitted characters.**");
-                valid = false;
-            }
-
-            // check if the user string is too short or too long
-            if ((userString.length() < 3 || userString.length() > 32) && !userString.equalsIgnoreCase("Q")) {
-                System.out.println("**ERR: Please enter between 4 and 32 characters.**");
-                valid = false;
-            }
-
-            // check if the save file already exists
-            for (String s : saves) {
-                if (s.equals(userString)) {
-                    System.out.println("This save file already exists.");
-                    System.out.print("Do you want to override your previous save (Y/N)? > ");
-                    if (inputOneChar() == 'Y') valid = true;
-                    else valid = false;
-                }
-            }
-
-            // check if the file name is allowed in windows
-            for (String s : forbidden) {
-                if (s.equals(userString)) {
-                    System.out.println("**ERR: This filename is not allowed.**");
-                    valid = false;
-                }
-            }
-
-            if (valid) filename = userString;
-        }
-
-        return filename;
-    }
-
-    /**
      * load method
      * <p>
      * Loads a board from a save file
-     * @param filename The file to load
+     *
+     * @param filename {@code String} - The file to load
      */
-    public static void load(String filename) {
+    private static void load(String filename) {
         // regex strings
         final String PLAYERS_REGEX = "^[OX]\\s[a-i][1-9]:\\s((Human)|(Computer \\(difficulty: ((normal)|(hard))\\)))$";
         final String WALLS_REGEX = "^([0-9]|(1[0-9])|(20))\\s\\{O:\\s([0-9]|(10))\\s,\\sX:\\s([0-9]|(10))\\s}:$";
@@ -479,8 +493,9 @@ public class Quoridor {
 
                 // check if the pawn position is valid
                 if (Board.validatePawnPos(p1Pos) && p1Human) {
-                    p1 = new Pawn(p1Pos, 1, true); // initialize a new pawn object
+                    p1 = new Pawn(1, p1Pos, true); // initialize a new pawn object
                 }
+
                 else valid = false;
             }
             else {valid=false;}
@@ -499,7 +514,7 @@ public class Quoridor {
 
                 // check if the pawn position is valid
                 if (Board.validatePawnPos(p2Pos)) {
-                    p2 = new Pawn(p2Pos, 2, p2Human); // initialize a new pawn object
+                    p2 = new Pawn(2, p2Pos, p2Human); // initialize a new pawn object
 
                     // get the agent difficulty if the player is a computer
                     if (!p2Human) {
@@ -509,6 +524,7 @@ public class Quoridor {
 
                     p2Agent = p2Human ? null : new Agent(p2AgentDiff); // initialize a new computer object
                 }
+
                 else valid = false;
             }
             else {valid=false;}
@@ -552,24 +568,27 @@ public class Quoridor {
 
             // loop over all walls
             for (int i=0; i<totWalls; i++) {
-                // read the next line
-                line = br.readLine();
+                if (valid) {
+                    // read the next line
+                    line = br.readLine();
 
-                if (line.matches(WALL_REGEX) && valid) {
-                    // split the line into characters
-                    chars = line.toCharArray();
+                    if (line.matches(WALL_REGEX)) {
+                        // split the line into characters
+                        chars = line.toCharArray();
 
-                    // set the orientation, position, and owner of the wall
-                    wallVertical = chars[0] == '|';
-                    wallPos = posStrToArr(String.valueOf(chars[2]) + chars[3]);
-                    wallOwner = chars[6] == 'O' ? 1 : 2;
+                        // set the orientation, position, and owner of the wall
+                        wallVertical = chars[0] == '|';
+                        wallPos = posStrToArr(String.valueOf(chars[2]) + chars[3]);
+                        wallOwner = chars[6] == 'O' ? 1 : 2;
 
-                    // add the wall to the list if it is valid
-                    if (Board.validateWallPos(new Wall(wallOwner, wallPos, wallVertical), wallSet)) {
-                        wallSet.add(new Wall(wallOwner, wallPos, wallVertical));
+                        // add the wall to the list if it is valid
+                        if (Board.validateWallPos(new Wall(wallOwner, wallPos, wallVertical), wallSet)) {
+                            wallSet.add(new Wall(wallOwner, wallPos, wallVertical));
+                        }
+                    } else {
+                        valid = false;
                     }
                 }
-                else {valid = false;}
             }
 
             // loop over the walls
@@ -601,7 +620,7 @@ public class Quoridor {
                 load(loadMenu(false));
             }
         } catch (Exception e) {
-            System.out.println("**ERR: File read error (does this file exist?)**");
+            System.out.println("**ERR: Invalid save file - file read error.**");
         }
     }
 
@@ -610,9 +629,9 @@ public class Quoridor {
      * <p>
      * saves the game state in a file
      *
-     * @param filename the name of the save file
+     * @param filename {@code String} - the name of the save file
      */
-    public static void save(String filename) {
+    private static void save(String filename) {
         try {
             // init buffered writer
             BufferedWriter bw = new BufferedWriter(new FileWriter("./saves/" + filename + ".txt", false));
@@ -683,7 +702,7 @@ public class Quoridor {
      * <p>
      * Handles each turn
      */
-    public static void turn() {
+    private static void turn() {
         // declare variables
         int current = board.getCurrentPlayer();
         boolean menuSuccess = false;
@@ -757,14 +776,14 @@ public class Quoridor {
                     "\\________/\\________/\\__/__/__/\\\\_____/  \\_______// \\_____// \\________/\\____/___/ ");
 
             // get the move from the computer
-            System.out.println("\nThinking...");
-            int[] move = p2Agent.getAction(board.getPawn(board.getCurrentPlayer()), board);
+            System.out.print("\nThinking...");
+            int[] move = p2Agent.getAction(board.getCurrentPawn(), board);
 
             // check if the move is a wall or a pawn
             if (move[0] == 0) {
                 // move the pawn
-                if (board.movePawn(board.getPawn(board.getCurrentPlayer()), new int[]{move[1], move[2]})) {
-                    System.out.println("The computer has moved its pawn to " + posArrToStr(new int[]{move[1], move[2]}));
+                if (board.movePawn(board.getCurrentPawn(), new int[]{move[1], move[2]})) {
+                    System.out.println("\nThe computer has moved its pawn to " + posArrToStr(new int[]{move[1], move[2]}));
 
                     // speedbump for the user
                     System.out.print("Press [ENTER] to continue > ");
@@ -772,13 +791,13 @@ public class Quoridor {
                 }
                 // output an error message if the move is invalid
                 else {
-                    System.out.println("**ERR: An unexpected issue has occurred when trying to execute the computer's move.**");
+                    System.out.println("\n**ERR: An unexpected issue has occurred when trying to execute the computer's move.**");
                     abort = true;
                 }
             } else {
                 // place the wall
-                if (board.placeWall(board.getPawn(board.getCurrentPlayer()), new int[]{move[1], move[2]}, move[3] == 1)) {
-                    System.out.println("The computer has placed a " + (move[3] == 1 ? " vertical" : " horizontal") + " wall at " + posArrToStr(new int[]{move[1], move[2]}));
+                if (board.placeWall(board.getCurrentPawn(), new int[]{move[1], move[2]}, move[3] == 1)) {
+                    System.out.println("\nThe computer has placed a " + (move[3] == 1 ? " vertical" : " horizontal") + " wall at " + posArrToStr(new int[]{move[1], move[2]}));
 
                     // speedbump for the user
                     System.out.print("Press [ENTER] to continue > ");
@@ -786,7 +805,7 @@ public class Quoridor {
                 }
                 // output an error message if the wall placement is invalid
                 else {
-                    System.out.println("**ERR: An unexpected issue has occurred when trying to execute the computer's placement.**");
+                    System.out.println("**\nERR: An unexpected issue has occurred when trying to execute the computer's placement.**");
                     abort = true;
                 }
             }
@@ -797,9 +816,9 @@ public class Quoridor {
      * checkWinner method
      * <p>
      * Checks if the game is over
-     * @return int - The winner of the game (-1 if the game is not over)
+     * @return {@code int} - The winner of the game (-1 if the game is not over)
      */
-    public static int checkWinner() {
+    private static int checkWinner() {
         int winner = -1;
 
         if (board.getP1().getY() == board.getP1().getYGoal()) winner = 1;
@@ -812,6 +831,8 @@ public class Quoridor {
      * main method
      * <p>
      * Main driver code for the entire game
+     *
+     * @param args {@code String[]} - The command line arguments
      */
     public static void main(String[] args) {
         // declare variables
