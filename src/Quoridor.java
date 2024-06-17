@@ -17,7 +17,6 @@ public class Quoridor {
     // declare constants
     private static final int SIZE = Board.getSize();
     private static final int MAX_WALLS = Board.getMaxWalls();
-    private static final String TRANSPOSITIONS_PATH = "./transpositions.ser";
 
     // declare variables
     private static Scanner sc = new Scanner(System.in);
@@ -875,6 +874,7 @@ public class Quoridor {
      */
     public static void main(String[] args) {
         // declare variables
+        final String TRANSPOSITIONS_PATH = "./transpositions.ser";
         int winner;
         String file;
         char choice = ' ';

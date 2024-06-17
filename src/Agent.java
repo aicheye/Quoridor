@@ -452,16 +452,31 @@ public class Agent {
             children = new ArrayList<List<Integer>>();
 
             // loop over every wall placement
-            for (Wall wall : position.calcValidWallPlacements(position.getCurrentPawn())) {
-                // encode it and add it to the list of children
-                action = encodeAction(wall);
-                actionColl = new ArrayList<Integer>();
-                actionColl.add(action[0]);
-                actionColl.add(action[1]);
-                actionColl.add(action[2]);
-                actionColl.add(action[3]);
+            for (List<Integer> pos : position.propogateSquares(position.getCurrentPawn())) {
+                // initialize a vertical and horizontal wall object at this position and check if it is valid
+                if (position.validateWallPlace(position.getCurrentPawn(), new int[]{pos.get(0), pos.get(1)}, true)) {
+                    // encode it and add it to the list of children
+                    action = encodeAction(new Wall(position.getCurrentPlayer(), new int[]{pos.get(0), pos.get(1)}, true));
+                    actionColl = new ArrayList<Integer>();
+                    actionColl.add(action[0]);
+                    actionColl.add(action[1]);
+                    actionColl.add(action[2]);
+                    actionColl.add(action[3]);
 
-                children.add(actionColl);
+                    children.add(actionColl);
+                }
+
+                if (position.validateWallPlace(position.getCurrentPawn(), new int[]{pos.get(0), pos.get(1)}, false)) {
+                    // encode it and add it to the list of children
+                    action = encodeAction(new Wall(position.getCurrentPlayer(), new int[]{pos.get(0), pos.get(1)}, false));
+                    actionColl = new ArrayList<Integer>();
+                    actionColl.add(action[0]);
+                    actionColl.add(action[1]);
+                    actionColl.add(action[2]);
+                    actionColl.add(action[3]);
+
+                    children.add(actionColl);
+                }
             }
 
             // loop over every pawn move

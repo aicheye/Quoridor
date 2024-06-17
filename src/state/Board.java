@@ -2,6 +2,7 @@ package state;
 
 import state.component.Pawn;
 import state.component.Wall;
+import state.util.MinHeap;
 
 import java.io.Serializable;
 import java.util.*;
@@ -454,6 +455,102 @@ public class Board implements Serializable {
         for (int i = 0; i < SIZE; i++) min = Math.min(min, dijkstra[i][self.getYGoal()]);
 
         return min;
+    }
+
+    /**
+     * propogateSquares method
+     * <p>
+     * Calculates the optimal path to the goal
+     *
+     * @param self {@code state.component.Pawn} - The pawn to calculate
+     */
+    public List<List<Integer>> propogateSquares(Pawn self) {
+        // declare variables
+        int[][] dijkstra = new int[SIZE][SIZE];
+        List<List<Integer>> queue = new ArrayList<List<Integer>>();
+        Set<List<Integer>> visited = new HashSet<List<Integer>>();
+        List<Integer> curr;
+        Set<Character> dirs = new HashSet<Character>();
+        dirs.add('N');
+        dirs.add('E');
+        dirs.add('S');
+        dirs.add('W');
+        int[] nextPos = new int[2];
+        List<Integer> nextPosList;
+
+        // initialize priority queue
+        MinHeap pq = new MinHeap(81);
+
+        // stores an ArrayList of every square in the board ordered by distance from the goal
+        List<List<Integer>> propogation = new ArrayList<List<Integer>>();
+
+        // initialize every square to infinity and initialize ArrayLists
+        for (int i = 0; i < SIZE; i++) {
+            for (int j = 0; j < SIZE; j++) {
+                dijkstra[i][j] = Integer.MAX_VALUE;
+            }
+        }
+
+        // initialize the starting square to 0
+        dijkstra[self.getX()][self.getY()] = 0;
+
+        // add the starting square to the queue
+        nextPosList = new ArrayList<Integer>();
+        nextPosList.add(self.getX());
+        nextPosList.add(self.getY());
+
+        queue.add(nextPosList);
+
+        // keep looping until the queue is empty
+        while (!queue.isEmpty()) {
+            // get the next position
+            curr = queue.remove(0);
+
+            // add it to the visited array
+            visited.add(curr);
+
+            // test every direction the pawn can move in
+            for (char dir : dirs) {
+                nextPos = calcNewPos(new int[]{curr.get(0), curr.get(1)}, dir);
+
+                nextPosList = new ArrayList<Integer>();
+                nextPosList.add(nextPos[0]);
+                nextPosList.add(nextPos[1]);
+
+                // if the new position is valid and there is no wall blocking the path
+                if (validatePawnPos(nextPos) &&
+                        !isAnyWallBlocking(new int[]{curr.get(0), curr.get(1)}, dir) &&
+                        !visited.contains(nextPosList)) {
+                    queue.add(nextPosList);
+
+                    // set the distance to the new square to the distance to the current square + 1 (if it is lower)
+                    dijkstra[nextPos[0]][nextPos[1]] = Math.min(dijkstra[nextPos[0]][nextPos[1]], dijkstra[curr.get(0)][curr.get(1)] + 1);
+                }
+            }
+        }
+
+        // propogate the dijkstra array into the priority queue
+        for (int i = 0; i < SIZE; i++) {
+            for (int j = 0; j < SIZE; j++) {
+                pq.insert(new int[]{i, j}, dijkstra[i][j]);
+            }
+        }
+
+        // extract from priority queue into propogation
+        while (!Arrays.equals(nextPos, new int[]{-1, -1})) {
+            // add the next position to the propogation
+            nextPosList = new ArrayList<Integer>();
+            nextPosList.add(nextPos[0]);
+            nextPosList.add(nextPos[1]);
+
+            // add the next position to the propogation
+            propogation.add(nextPosList);
+
+            // extract the next position
+            nextPos = pq.extract();
+        }
+
+        return propogation;
     }
 
     /**
