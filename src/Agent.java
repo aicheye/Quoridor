@@ -21,6 +21,17 @@ public class Agent {
     private int call_counter; // counts how many times minimax has been called
 
     /**
+     * getDiff method
+     * <p>
+     * Getter for the difficulty of the computer
+     *
+     * @return {@code int} - The difficulty of the computer
+     */
+    public int getDiff() {
+        return diff;
+    }
+
+    /**
      * deserializeTranspositions method
      * <p>
      * Gets stored transpositionEvals and transpositionChildren from disk

@@ -671,12 +671,20 @@ public class Quoridor {
             bw.write("O ");
             bw.write(posArrToStr(board.getP1().getPos()));
             bw.write(": ");
-            bw.write(board.getP1().isHuman() ? "Human\n" : "Computer\n");
+            bw.write("Human\n");
 
             bw.write("X ");
             bw.write(posArrToStr(board.getP2().getPos()));
             bw.write(": ");
-            bw.write(board.getP2().isHuman() ? "Human\n\n" : "Computer\n\n");
+
+            // write the computer difficulty
+            if (board.getP2().isHuman()) {
+                bw.write("Human\n\n");
+            } else {
+                bw.write("Computer (difficulty: ");
+                bw.write(p2Agent.getDiff() == 0 ? "normal" : "hard");
+                bw.write(")\n\n");
+            }
 
             // write the walls
             bw.write(String.valueOf(MAX_WALLS * 2 - board.getWallsRemaining(board.getP1()) - board.getWallsRemaining(board.getP2())));

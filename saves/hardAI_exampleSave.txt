@@ -1,5 +1,5 @@
 O f7: Human
-X f4: Computer
+X f4: Computer (difficulty: hard)
 
 16 {O: 7 , X: 9 }:
 – c9: X
