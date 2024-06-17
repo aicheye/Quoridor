@@ -413,9 +413,7 @@ public class Agent {
         }
 
         // if the evaluation has already been calculated, get the value
-        else {
-            value = transpositionsEvals.get(position);
-        }
+        else value = transpositionsEvals.get(position);
 
         return value;
     }
@@ -430,12 +428,15 @@ public class Agent {
      */
     private List<List<Integer>> getChildren(Board position) {
         // declare variables
-        List<List<Integer>> children = new ArrayList<List<Integer>>();
+        List<List<Integer>> children;
         int[] action;
         List<Integer> actionColl;
 
         // check if the children for this position have already been calculated and put if absent
         if (transpositionsChildren.get(position) == null) {
+            // initialize a new ArrayList
+            children = new ArrayList<List<Integer>>();
+
             // loop over every wall placement
             for (Wall wall : position.calcValidWallPlacements(position.getCurrentPawn())) {
                 // encode it and add it to the list of children
@@ -465,6 +466,9 @@ public class Agent {
             transpositionsChildren.put(position.copy(), children);
         }
 
-        return transpositionsChildren.get(position);
+        // if the children have already been calculated, get the value
+        else children = transpositionsChildren.get(position);
+
+        return children;
     }
 }
