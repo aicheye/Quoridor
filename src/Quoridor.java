@@ -613,7 +613,7 @@ public class Quoridor {
                         wallOwner = chars[6] == 'O' ? 1 : 2;
 
                         // add the wall to the list if it is valid
-                        if (Board.validateWallPos(new Wall(wallOwner, wallPos, wallVertical), wallSet)) {
+                        if (Board.validateWall(new Wall(wallOwner, wallPos, wallVertical), wallSet)) {
                             wallSet.add(new Wall(wallOwner, wallPos, wallVertical));
                         }
                     } else {
@@ -880,7 +880,7 @@ public class Quoridor {
         char choice = ' ';
 
         // deserialize from file
-        System.out.println("Deserializing transpositions...");
+        System.out.print("Deserializing transpositions...");
         Agent.deserializeTranspositions(TRANSPOSITIONS_PATH);
 
         // output main menu

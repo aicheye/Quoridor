@@ -457,81 +457,6 @@ public class Board implements Serializable {
     }
 
     /**
-     * calcDistance method
-     * <p>
-     * Calculates the distance between the pawn and the goal
-     *
-     * @return {@code int} - The distance between the two pawns
-     * Returns {@code Integer.MAX_INT} if the pawn is blocked
-     * from reaching the other pawn.
-     */
-    public int calcDistanceBetweenPawns() {
-        // declare variables
-        int[][] dijkstra = new int[SIZE][SIZE];
-        List<List<Integer>> queue = new ArrayList<List<Integer>>();
-        Set<List<Integer>> visited = new HashSet<List<Integer>>();
-        List<Integer> curr;
-        Set<Character> dirs = new HashSet<Character>();
-        dirs.add('N');
-        dirs.add('E');
-        dirs.add('S');
-        dirs.add('W');
-        int[] nextPos;
-        List<Integer> nextPosList;
-
-        // initialize every square to infinity
-        for (int i = 0; i < SIZE; i++) {
-            for (int j = 0; j < SIZE; j++) {
-                dijkstra[i][j] = Integer.MAX_VALUE;
-            }
-        }
-
-        // initialize the starting square to 0
-        dijkstra[p1.getX()][p1.getY()] = 0;
-
-        // check if the state.component.Pawn is already at the goal
-        if (Arrays.equals(p1.getPos(), p2.getPos())) dijkstra[p2.getX()][p2.getY()] = 0;
-
-        else {
-            // add the starting square to the queue
-            nextPosList = new ArrayList<Integer>();
-            nextPosList.add(p1.getX());
-            nextPosList.add(p1.getY());
-
-            queue.add(nextPosList);
-
-            // keep looping until the queue is empty
-            while (!queue.isEmpty()) {
-                // get the next position
-                curr = queue.remove(0);
-                // add it to the visited array
-                visited.add(curr);
-
-                // test every direction the pawn can move in
-                for (char dir : dirs) {
-                    nextPos = calcNewPos(new int[]{curr.get(0), curr.get(1)}, dir);
-
-                    nextPosList = new ArrayList<Integer>();
-                    nextPosList.add(nextPos[0]);
-                    nextPosList.add(nextPos[1]);
-
-                    // if the new position is valid and there is no wall blocking the path
-                    if (validatePawnPos(nextPos) &&
-                            !isAnyWallBlocking(new int[]{curr.get(0), curr.get(1)}, dir) &&
-                            !visited.contains(nextPosList)) {
-                        queue.add(nextPosList);
-
-                        // set the distance to the new square to the distance to the current square + 1 (if it is lower)
-                        dijkstra[nextPos[0]][nextPos[1]] = Math.min(dijkstra[nextPos[0]][nextPos[1]], dijkstra[curr.get(0)][curr.get(1)] + 1);
-                    }
-                }
-            }
-        }
-
-        return dijkstra[p2.getX()][p2.getY()];
-    }
-
-    /**
      * isGameOver method
      * <p>
      * Checks if a game is over
@@ -683,10 +608,9 @@ public class Board implements Serializable {
      * Checks if a wall placement is valid on the current walls
      *
      * @param wall {@code state.component.Wall} - The wall placement to check
-     * @param walls {@code Set<state.component.Wall>} - The set of all walls
      * @return {@code boolean} - If the placement is valid
      */
-    public static boolean validateWallPos(Wall wall, Set<Wall> walls) {
+    public static boolean validateWallPos(Wall wall) {
         // declare variables
         boolean valid = true;
 
@@ -694,16 +618,6 @@ public class Board implements Serializable {
         if (wall.getX() < 0 || wall.getX() >= SIZE - 1 ||
                 wall.getY() <= 0 || wall.getY() >= SIZE) {
             valid = false;
-        }
-
-        // continue if the wall is not out of bounds
-        if (valid) {
-            // loop over all walls
-            for (Wall w : walls) {
-                if (isWallConflicting(wall, w)) {
-                    valid = false; // if the wall is conflicting, set valid to false
-                }
-            }
         }
 
         return valid;
@@ -738,6 +652,16 @@ public class Board implements Serializable {
             else if ((x1 - x2 == 1 || x2 - x1 == 1) && y1 == y2) valid = true;
         } else {
             if (x1 == x2 && y1 == y2) valid = true;
+        }
+
+        return valid;
+    }
+
+    public static boolean validateWall(Wall wall, Set<Wall> walls) {
+        boolean valid = validateWallPos(wall);
+
+        for (Wall w : walls) {
+            if (isWallConflicting(wall, w)) valid = false;
         }
 
         return valid;
@@ -804,7 +728,7 @@ public class Board implements Serializable {
 
         // check if the owner has any walls left and call validateWallPos
         return wallsRemaining[owner.getId() - 1] > 0 &&
-                validateWallPos(new Wall(owner.getId(), pos, vertical), walls) &&
+                validateWall(new Wall(owner.getId(), pos, vertical), walls) &&
                 !isWallBlockingPath(other, new Wall(owner.getId(), pos, vertical));
     }
 

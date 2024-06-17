@@ -52,7 +52,8 @@ public class Agent {
             transpositionsEvals = (Map<Board, Integer>) obj1;
             transpositionsChildren = (Map<Board, List<List<Integer>>>) obj2;
 
-            System.out.println(transpositionsEvals.size() + transpositionsChildren.size() + " transpositions successfully loaded.\n");
+            System.out.printf("\n%d transpositions successfully loaded.\n",
+                    transpositionsEvals.size() + transpositionsChildren.size());
 
             // close the streams
             ois.close();
@@ -238,6 +239,9 @@ public class Agent {
 
         // decode the action
         action = new int[]{algoEval[1], algoEval[2], algoEval[3], algoEval[4]};
+
+        // if the minimax algorithm cannot make a move, revert to the normal computer
+        if (Arrays.equals(action, new int[]{0, 0, 0, 0})) action = getActionNormal(board);
 
         return action;
     }
