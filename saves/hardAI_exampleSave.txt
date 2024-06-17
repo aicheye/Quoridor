@@ -1,0 +1,22 @@
+O f7: Human
+X f4: Computer
+
+16 {O: 7 , X: 9 }:
+– c9: X
+| h8: X
+| f7: X
+– a9: X
+| c6: X
+| f9: X
+– g2: O
+– e2: O
+– g4: O
+– c2: O
+– a2: O
+| h3: O
+– g9: X
+– e9: X
+| h6: X
+| g5: O
+
+Next Move: O

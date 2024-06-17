@@ -1,3 +1,8 @@
+import state.Board;
+import state.component.Pawn;
+import state.component.Wall;
+
+import java.io.*;
 import java.util.*;
 
 /**
@@ -11,6 +16,70 @@ import java.util.*;
 public class Agent {
     // declare local variables
     private final int diff;
+    private static Map<Board, Integer> transpositionsEvals;
+    private static Map<Board, List<List<Integer>>> transpositionsChildren = new HashMap<Board, List<List<Integer>>>();
+    private int call_counter; // counts how many times minimax has been called
+
+    /**
+     * deserializeTranspositions method
+     * <p>
+     * Gets stored transpositionEvals and transpositionChildren from disk
+     *
+     * @param path {@code String} - The path to the serialized data
+     */
+    public static void deserializeTranspositions(String path) {
+        try {
+            // declare variables
+            FileInputStream fis = new FileInputStream(path);
+            ObjectInputStream ois = new ObjectInputStream(fis);
+            Object obj1, obj2;
+
+            // read the objects
+            obj1 = ois.readObject();
+            obj2 = ois.readObject();
+
+            transpositionsEvals = (Map<Board, Integer>) obj1;
+            transpositionsChildren = (Map<Board, List<List<Integer>>>) obj2;
+
+            // close the streams
+            ois.close();
+            fis.close();
+        }
+        // catch exceptions
+        catch (IOException | ClassNotFoundException | ClassCastException e) {
+            transpositionsEvals = new HashMap<Board, Integer>();
+            transpositionsChildren = new HashMap<Board, List<List<Integer>>>();
+        }
+    }
+
+    /**
+     * serializeTranspositions method
+     * <p>
+     * Gets stored transpositionEvals and transpositionChildren from disk
+     *
+     * @param path {@code String} - The path to the serialized data
+     */
+    public static void serializeTranspositions(String path) {
+        try {
+            // declare variables
+            FileOutputStream fos = new FileOutputStream(path);
+            ObjectOutputStream oos = new ObjectOutputStream(fos);
+
+            // write the objects
+            oos.writeObject(transpositionsEvals);
+            oos.writeObject(transpositionsChildren);
+
+            // flush and close the streams
+            oos.flush();
+            fos.flush();
+            oos.close();
+            fos.close();
+        }
+        // catch exceptions
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     /**
      * Computer method
@@ -26,18 +95,6 @@ public class Agent {
     /**
      * encodeAction method
      * <p>
-     * Encodes an action into an array (wall placement)
-     *
-     * @param pos {@code int[]} - The position of the wall
-     * @param vertical {@code boolean} - True if the wall is vertical, false if the wall is horizontal
-     */
-    private static int[] encodeAction(int[] pos, boolean vertical) {
-        return new int[]{1, pos[0], pos[1], vertical ? 1 : 0};
-    }
-
-    /**
-     * encodeAction method
-     * <p>
      * Encodes an action into an array (pawn moves)
      *
      * @param pos {@code int[]} - The position of the move
@@ -47,27 +104,30 @@ public class Agent {
     }
 
     /**
-     * calcWallDiffThreshold
+     * encodeAction method
      * <p>
-     * Calculates the wall difference threshold based on the number of walls remaining
-     * @param wallsRemaining {@code int} - The number of walls remaining
-     * @return {@code int} - The wall difference threshold
+     * Encodes an action into an array (wall placement)
+     *
+     * @param wall {@code state.component.Wall} - The wall to encode
      */
-    private static int calcWallDiffThreshold(int wallsRemaining) {
-        int WALL_DIFF_THRESHOLD;
+    private static int[] encodeAction(Wall wall) {
+        return new int[]{1, wall.getX(), wall.getY(), wall.isVertical() ? 1 : 0};
+    }
 
-        // calculate the threshold
-        if (wallsRemaining == 10) {
-            WALL_DIFF_THRESHOLD = 0;
-        } else if (wallsRemaining >= 7) {
-            WALL_DIFF_THRESHOLD = 1;
-        } else if (wallsRemaining >= 3) {
-            WALL_DIFF_THRESHOLD = 2;
+    /**
+     * getAction method
+     * <p>
+     * Returns the move that the computer will make
+     *
+     * @param board {@code state.Board} - The current state of the board
+     * @return {@code int[]} - The move that the computer will make
+     */
+    public int[] getAction(Board board) {
+        if (diff == 0) {
+            return getActionNormal(board);
         } else {
-            WALL_DIFF_THRESHOLD = 3;
+            return getActionHard(board);
         }
-
-        return WALL_DIFF_THRESHOLD;
     }
 
     /**
@@ -75,61 +135,60 @@ public class Agent {
      * <p>
      * Returns the move that the computer will make (normal difficulty - depth 1)
      *
-     * @param self {@code Pawn} - The pawn that the computer is controlling
-     * @param board {@code Board} - The current state of the board
+     * @param board {@code state.Board} - The current state of the board
      * @return {@code int[]} - The move that the computer will make
      */
-    private int[] getActionNormal(Pawn self, Board board) {
-        // hidden constant: adjusted based on the number of walls already on the board
-        final int WALL_DIFF_THRESHOLD = calcWallDiffThreshold(board.getWallsRemaining(self));
-
+    private int[] getActionNormal(Board board) {
         // declare variables
+        Pawn self = board.getCurrentPawn();
         Set<List<Integer>> validPawnMoves = board.calcValidPawnMoves(self);
         Set<Wall> validWallMoves = board.calcValidWallPlacements(self);
-        int selfCurrDist = board.calcDistance(self);
-        int enemyCurrDist = board.calcDistance(board.getEnemy(self));
-        int maxWallDifference = -1;
-        Wall maxWall = new Wall(0, new int[]{0, 0}, false);
-        int maxPawnDifference = -1;
-        int[] maxPawnMove = new int[2];
-        int[] old = self.getPos();
-        int[] action = new int[4];
+        int maxEval = Integer.MIN_VALUE;
+        int currEval;
+        int[] action = new int[5];
         boolean winning = false;
 
         // calculate the minimum distance with every pawn move
         for (List<Integer> move : validPawnMoves) {
-            self.move(new int[]{move.get(0), move.get(1)});
-            if (selfCurrDist - board.calcDistance(self) > maxPawnDifference) {
-                maxPawnDifference = selfCurrDist - board.calcDistance(self);
-                maxPawnMove = new int[]{move.get(0), move.get(1)};
-            }
-            self.move(old);
-        }
+            if (!winning) {
+                self.moveTemp(new int[]{move.get(0), move.get(1)});
 
-        // calculate the minimum distance with every wall placement
-        for (Wall wall : validWallMoves) {
-            board.placeWallTemp(board.getPawn(wall.getOwner()), wall.getPos(), wall.isVertical());
-            if (board.calcDistance(board.getEnemy(self)) - enemyCurrDist > maxWallDifference) {
-                maxWallDifference = board.calcDistance(board.getEnemy(self)) - enemyCurrDist;
-                maxWall = new Wall(wall.getOwner(), wall.getPos(), wall.isVertical());
-            }
-            board.removeWall(wall.getPos());
-        }
+                currEval = eval(self.getId(), board);
 
-        // prioritize moves which win immediately
-        for (List<Integer> move : validPawnMoves) {
-            if (move.get(1) == self.getYGoal()) {
-                action = encodeAction(new int[]{move.get(0), move.get(1)});
-                winning = true;
+                // check if this move immediately wins the game
+                if (board.isGameOver()) {
+                    maxEval = Integer.MAX_VALUE;
+                    action = encodeAction(new int[]{move.get(0), move.get(1)});
+                    winning = true;
+                }
+
+                // check if the move is better than the current best move
+                else if (currEval > maxEval) {
+                    maxEval = currEval;
+                    action = encodeAction(new int[]{move.get(0), move.get(1)});
+                }
+
+                // reset the pawn position
+                self.moveBackTemp();
             }
         }
 
-        // if there are no immediately winning moves, apply the threshold and choose the best move given the threshold
         if (!winning) {
-            if (maxWallDifference >= WALL_DIFF_THRESHOLD && maxWallDifference >= maxPawnDifference) {
-                action = encodeAction(maxWall.getPos(), maxWall.isVertical());
-            } else {
-                action = encodeAction(maxPawnMove);
+            // calculate the minimum distance with every wall placement
+            for (Wall wall : validWallMoves) {
+                // create a temporary board
+                board.placeWallTemp(board.getPawn(wall.getOwner()), wall.getPos(), wall.isVertical());
+
+                currEval = eval(self.getId(), board);
+
+                // check if the move is better than the current best move
+                if (currEval > maxEval) {
+                    maxEval = currEval;
+                    action = encodeAction(wall);
+                }
+
+                // remove the wall
+                board.removeWallTemp(wall);
             }
         }
 
@@ -142,39 +201,30 @@ public class Agent {
      * Returns the move that the computer will make (hard)
      * Implements the minimax algorithm with a depth of 3 (with a-b pruning)
      *
-     * @param self {@code Pawn} - The pawn that the computer is controlling
-     * @param board {@code Board} - The current state of the board
+     * @param board {@code state.Board} - The current state of the board
      * @return {@code int[]} - The move that the computer will make
      */
-    private int[] getActionHard(Pawn self, Board board) {
+    private int[] getActionHard(Board board) {
         // declare variables
+        Pawn self = board.getCurrentPawn();
         final int SEARCH_DEPTH = 3;
-        List<List<Integer>> children = getChildren(board);
-        int[] action = new int[5];
-        int maxEval = Integer.MIN_VALUE;
+        int[] algoEval;
+        int[] action;
 
-        // check if the computer has no more walls to place
-        if (board.getWallsRemaining(self) == 0) {
-            action = getActionNormal(self, board);
-        }
+        // evaluate the move using the minimax algorithm
+        System.out.print(" This may take a while...");
+        algoEval = minimax(
+                self.getId(),
+                board,
+                SEARCH_DEPTH - 1,
+                Integer.MIN_VALUE,
+                Integer.MAX_VALUE,
+                new HashSet<Board>(),
+                null
+        );
 
-        // if the computer still has walls, run the minimax algorithm
-        else {
-            for (List<Integer> child : children) {
-                int[] actionChild = new int[]{child.get(0), child.get(1), child.get(2), child.get(3)};
-                Board next = board.copy();
-                next.doAction(actionChild);
-                int eval = minimax(self.getId(), next, SEARCH_DEPTH - 1, Integer.MIN_VALUE, Integer.MAX_VALUE, new HashSet<Board>());
-
-                // check if the evaluation is greater than the maximum evaluation
-                if (eval > maxEval) {
-                    maxEval = eval;
-                    action = actionChild;
-                }
-            }
-        }
-
-        if (maxEval == -1) action = getActionNormal(self, board);
+        // decode the action
+        action = new int[]{algoEval[1], algoEval[2], algoEval[3], algoEval[4]};
 
         return action;
     }
@@ -185,25 +235,37 @@ public class Agent {
      * Implements the minimax algorithm (with a-b pruning)
      *
      * @param maximizingPlayer {@code int} - The player to maximize (1 or 2)
-     * @param position {@code Board} - The current state of the board
+     * @param position {@code state.Board} - The current state of the board
      * @param depth {@code int} - The depth of the search
      * @param alpha {@code int} - The alpha value for a-b pruning
      * @param beta {@code int} - The beta value for a-b pruning
      * @param visited {@code boolean} - The set of visited positions
-     * @return {@code int[]} - The evaluation of the move
+     * @return {@code int[]} - The "best" move for the maximizing player along with its evaluation
      */
-    private int minimax(int maximizingPlayer, Board position, int depth, int alpha, int beta, Set<Board> visited) {
+    private int[] minimax(int maximizingPlayer, Board position, int depth, int alpha, int beta, Set<Board> visited, int[] action) {
         // declare variables
-        int eval = -1;
+        int[] evalActionPair = new int[5];
+        int[] evalActionPairChild;
         int maxEval = Integer.MIN_VALUE;
         int minEval = Integer.MAX_VALUE;
-        Board nextBoard;
-        int evalChild;
         boolean alphaBetaPruned = false;
 
-        // if the depth is 0 or the game is over, return the static evaluation of the move
-        if (depth == 0 || position.isGameOver()) {
-            eval = eval(maximizingPlayer, position);
+        // output a dot to indicate progress
+        if (++call_counter % 100 == 0) System.out.print(".");
+
+        // if the depth is 0, return the evaluation of the current position
+        if (depth == 0) {
+            evalActionPair = new int[]{eval(maximizingPlayer, position), action[0], action[1], action[2], action[3]};
+        }
+
+        // if the game is over and the player is the maximizing player, return an evaluation of infinity
+        else if (position.getCurrentPlayer() == maximizingPlayer && position.isGameOver()) {
+            evalActionPair = new int[]{Integer.MAX_VALUE, action[0], action[1], action[2], action[3]};
+        }
+
+        // if the game is over and the player is the minimizing player, return an evaluation of negative infinity
+        else if (position.getCurrentPlayer() != maximizingPlayer && position.isGameOver()) {
+            evalActionPair = new int[]{Integer.MIN_VALUE, action[0], action[1], action[2], action[3]};
         }
 
         // if the current player is the maximizing player, find the move with the maximum evaluation using recursion
@@ -214,30 +276,46 @@ public class Agent {
                 if (!alphaBetaPruned) {
                     int[] actionChild = new int[]{child.get(0), child.get(1), child.get(2), child.get(3)};
 
-                    // create a temporary board and apply the action
-                    nextBoard = position.copy();
-                    nextBoard.doAction(actionChild);
+                    // execute the action
+                    position.doAction(actionChild);
 
-                    // recursively call the minimax function with the temporary board
                     // if the position has not been visited
-                    // and if the move is not significantly worse than the current eval
-                    if (!visited.contains(nextBoard) && eval(maximizingPlayer, position) >= eval(maximizingPlayer, nextBoard)) {
-                        visited.add(nextBoard);
-                        evalChild = minimax(maximizingPlayer, nextBoard, depth - 1, alpha, beta, visited);
+                    if (!visited.contains(position)) {
+                        visited.add(position);
+
+                        evalActionPairChild = minimax(
+                                maximizingPlayer,
+                                position,
+                                depth - 1,
+                                alpha,
+                                beta,
+                                visited,
+                                action == null ? actionChild : action
+                        );
 
                         // if the evaluation of the move is greater than the maximum evaluation,
                         // update the maximum evaluation
-                        if (evalChild > maxEval) {
-                            maxEval = evalChild;
-                            eval = eval(maximizingPlayer, nextBoard);
+                        if (evalActionPairChild[0] > maxEval) {
+                            maxEval = evalActionPairChild[0];
+                            evalActionPair = new int[]{
+                                    maxEval,
+                                    // if the action is null, use the child action
+                                    action == null ? actionChild[0] : action[0],
+                                    action == null ? actionChild[1] : action[1],
+                                    action == null ? actionChild[2] : action[2],
+                                    action == null ? actionChild[3] : action[3]
+                            };
                         }
 
                         // apply alpha-beta pruning
-                        alpha = Math.max(alpha, evalChild);
+                        alpha = Math.max(alpha, evalActionPairChild[0]);
                         if (beta <= alpha) {
                             alphaBetaPruned = true;
                         }
                     }
+
+                    // revert the action
+                    position.undoAction(actionChild);
                 }
             }
         }
@@ -250,34 +328,52 @@ public class Agent {
                 if (!alphaBetaPruned) {
                     int[] actionChild = new int[]{child.get(0), child.get(1), child.get(2), child.get(3)};
 
-                    // create a temporary board and apply the action
-                    nextBoard = position.copy();
-                    nextBoard.doAction(actionChild);
+                    // execute the action
+                    position.doAction(actionChild);
 
-                    // recursively call the minimax function with the temporary board
                     // if the position has not been visited
-                    if (!visited.contains(nextBoard)) {
-                        visited.add(nextBoard);
-                        evalChild = minimax(maximizingPlayer, nextBoard, depth - 1, alpha, beta, visited);
+                    if (!visited.contains(position)) {
+                        visited.add(position);
+
+                        // recursively call the minimax function with the temporary board
+                        evalActionPairChild = minimax(
+                                maximizingPlayer,
+                                position,
+                                depth - 1,
+                                alpha,
+                                beta,
+                                visited,
+                                action == null ? actionChild : action // if the action is null, use the child action
+                        );
 
                         // if the evaluation of the move is less than the maximum evaluation,
                         // update the maximum evaluation
-                        if (evalChild < minEval) {
-                            minEval = evalChild;
-                            eval = eval(maximizingPlayer, nextBoard);
+                        if (evalActionPairChild[0] < minEval) {
+                            minEval = evalActionPairChild[0];
+                            evalActionPair = new int[]{
+                                    minEval,
+                                    // if the action is null, use the child action
+                                    action == null ? actionChild[0] : action[0],
+                                    action == null ? actionChild[1] : action[1],
+                                    action == null ? actionChild[2] : action[2],
+                                    action == null ? actionChild[3] : action[3]
+                            };
                         }
 
                         // apply alpha-beta pruning
-                        beta = Math.min(beta, evalChild);
+                        beta = Math.min(beta, evalActionPairChild[0]);
                         if (beta <= alpha) {
                             alphaBetaPruned = true;
                         }
                     }
+
+                    // revert the action
+                    position.undoAction(actionChild);
                 }
             }
         }
 
-        return eval;
+        return evalActionPair;
     }
 
     /**
@@ -287,12 +383,30 @@ public class Agent {
      * the pawn to the goal and the distance from the enemy to their goal
      *
      * @param maximizingPlayer {@code int} - The player to maximize
-     * @param position {@code Board} - The current state of the board
+     * @param position {@code state.Board} - The current state of the board
      * @return {@code int} - The evaluation of the board
      */
     private int eval(int maximizingPlayer, Board position) {
-        return (position.calcDistance(position.getEnemy(position.getPawn(maximizingPlayer))) -
-                position.calcDistance(position.getPawn(maximizingPlayer)));
+        // declare variables
+        int maximizingPlayerDist;
+        int minimizingPlayerDist;
+        int value;
+
+        // check if the evaluation for this position has already been calculated and put if absent
+        if (transpositionsEvals.get(position) == null) {
+            maximizingPlayerDist = position.calcDistanceToGoal(position.getPawn(maximizingPlayer));
+            minimizingPlayerDist = position.calcDistanceToGoal(position.getEnemy(position.getPawn(maximizingPlayer)));
+            value = minimizingPlayerDist - maximizingPlayerDist;
+
+            transpositionsEvals.put(position.copy(), value);
+        }
+
+        // if the evaluation has already been calculated, get the value
+        else {
+            value = transpositionsEvals.get(position);
+        }
+
+        return value;
     }
 
     /**
@@ -300,7 +414,7 @@ public class Agent {
      * <p>
      * 
      * Returns a list of all possible moves from the current position
-     * @param position {@code Board} - The current state of the board
+     * @param position {@code state.Board} - The current state of the board
      * @return {@code List<List<Integer>>} - A list of all possible moves
      */
     private List<List<Integer>> getChildren(Board position) {
@@ -309,49 +423,37 @@ public class Agent {
         int[] action;
         List<Integer> actionColl;
 
-        // loop over every pawn move
-        for (List<Integer> move : position.calcValidPawnMoves(position.getCurrentPawn())) {
-            // encode it and add it to the list of children
-            action = encodeAction(new int[]{move.get(0), move.get(1)});
-            actionColl = new ArrayList<Integer>();
-            actionColl.add(action[0]);
-            actionColl.add(action[1]);
-            actionColl.add(action[2]);
-            actionColl.add(action[3]);
+        // check if the children for this position have already been calculated and put if absent
+        if (transpositionsChildren.get(position) == null) {
+            // loop over every wall placement
+            for (Wall wall : position.calcValidWallPlacements(position.getCurrentPawn())) {
+                // encode it and add it to the list of children
+                action = encodeAction(wall);
+                actionColl = new ArrayList<Integer>();
+                actionColl.add(action[0]);
+                actionColl.add(action[1]);
+                actionColl.add(action[2]);
+                actionColl.add(action[3]);
 
-            children.add(actionColl);
+                children.add(actionColl);
+            }
+
+            // loop over every pawn move
+            for (List<Integer> move : position.calcValidPawnMoves(position.getCurrentPawn())) {
+                // encode it and add it to the list of children
+                action = encodeAction(new int[]{move.get(0), move.get(1)});
+                actionColl = new ArrayList<Integer>();
+                actionColl.add(action[0]);
+                actionColl.add(action[1]);
+                actionColl.add(action[2]);
+                actionColl.add(action[3]);
+
+                children.add(actionColl);
+            }
+
+            transpositionsChildren.put(position.copy(), children);
         }
 
-        // loop over every wall placement
-        for (Wall wall : position.calcValidWallPlacements(position.getCurrentPawn())) {
-            // encode it and add it to the list of children
-            action = encodeAction(wall.getPos(), wall.isVertical());
-            actionColl = new ArrayList<Integer>();
-            actionColl.add(action[0]);
-            actionColl.add(action[1]);
-            actionColl.add(action[2]);
-            actionColl.add(action[3]);
-
-            children.add(actionColl);
-        }
-
-        return children;
-    }
-
-    /**
-     * getAction method
-     * <p>
-     * Returns the move that the computer will make
-     *
-     * @param self  {@code Pawn} - The pawn that the computer is controlling
-     * @param board {@code Board} - The current state of the board
-     * @return {@code int[]} - The move that the computer will make
-     */
-    public int[] getAction(Pawn self, Board board) {
-        if (diff == 0) {
-            return getActionNormal(self, board);
-        } else {
-            return getActionHard(self, board);
-        }
+        return transpositionsChildren.get(position);
     }
 }

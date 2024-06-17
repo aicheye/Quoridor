@@ -1,3 +1,7 @@
+import state.Board;
+import state.component.Pawn;
+import state.component.Wall;
+
 import java.util.*;
 import java.io.*;
 
@@ -13,12 +17,14 @@ public class Quoridor {
     // declare constants
     private static final int SIZE = Board.getSize();
     private static final int MAX_WALLS = Board.getMaxWalls();
+    private static final String TRANSPOSITIONS_PATH = "./transpositions.ser";
 
     // declare variables
     private static Scanner sc = new Scanner(System.in);
     private static Board board;
     private static Agent p2Agent;
     private static boolean abort = false;
+    private static final Set<Character> yesNo = new HashSet<Character>(Arrays.asList('Y', 'N'));
 
     /**
      * posStrToArr method
@@ -70,15 +76,18 @@ public class Quoridor {
      * <p>
      * Helper method to validate the user's input
      *
+     * @param output  {@code String} - Whether to output a selection menu
      * @param options {@code Set<Character>} - The options to validate against
      * @return {@code char} - The selection of the user
      */
-    private static char validateInput(Set<Character> options) {
+    private static char validateInput(String output, Set<Character> options) {
         char sel;
 
         do {
+            if (output == null) System.out.print("Enter a Selection > ");
+            else System.out.print(output);
+
             // take user input
-            System.out.print("Enter a Selection > ");
             sel = inputOneChar();
 
             // check if selection is invalid
@@ -86,6 +95,22 @@ public class Quoridor {
                 System.out.println("**ERR: Please select a valid option.**");
             }
         } while (!options.contains(Character.toUpperCase(sel)));
+
+        return sel;
+    }
+
+    /**
+     * validateInput method
+     * <p>
+     * Helper method to validate the user's input
+     *
+     * @param options {@code Set<Character>} - The options to validate against
+     * @return {@code char} - The selection of the user
+     */
+    private static char validateInput(Set<Character> options) {
+        char sel;
+
+        sel = validateInput(null, options);
 
         return sel;
     }
@@ -105,7 +130,7 @@ public class Quoridor {
         options.add('H');
         options.add('Q');
 
-        System.out.println("\n---------- Welcome to QuoridorJ! ----------\n");
+        System.out.println("\n---------- Welcome to Quoridor! -----------\n");
 
         System.out.println(  "{     <N>ew Game                          }");
         System.out.println(  "{     <L>oad Save                         }");
@@ -129,9 +154,8 @@ public class Quoridor {
         // declare variables
         final File folder = new File("./saves");
         File[] listOfSaves = folder.listFiles();
-
         List<String> saves = new ArrayList<String>();
-
+        String input;
         int choice;
         String file = null;
 
@@ -164,16 +188,23 @@ public class Quoridor {
         while (file == null) {
             // take user input and return it if valid
             System.out.print("Enter a selection (or Q to quit) > ");
-            choice = Integer.parseInt(sc.nextLine()) - 1;
+            input = sc.nextLine();
 
-            // check if it is a valid file
-            if (0 <= choice && choice < saves.size()) file = "./saves/" + saves.get(choice) + ".txt";
+            try {
+                choice = Integer.parseInt(input) - 1;
 
+                // check if it is a valid file
+                if (0 <= choice && choice < saves.size()) file = "./saves/" + saves.get(choice) + ".txt";
+                    // output error
+                else System.out.println("*ERR: Please select a valid file (or Q to quit)**");
+            }
+            // catch if the input string is not a number
+            catch (NumberFormatException e) {
                 // check if the user chose to quit the loop
-            else if (choice == 'Q') file = "Q";
-
+                if (input.length() > 0 && Character.toUpperCase(input.charAt(0)) == 'Q') file = "Q";
                 // output error
-            else System.out.println("*ERR: Please select a valid file (or Q to quit)**");
+                else System.out.println("**ERR: Please select a valid file (or Q to quit)**");
+            }
         }
 
         // return the filename
@@ -235,8 +266,8 @@ public class Quoridor {
             for (String s : saves) {
                 if (s.equals(userString)) {
                     System.out.println("This save file already exists.");
-                    System.out.print("Do you want to override your previous save (Y/N)? > ");
-                    if (inputOneChar() == 'Y') valid = true;
+                    if (validateInput("Do you want to override your previous save (Y/N)? > ", yesNo) == 'Y')
+                        valid = true;
                     else valid = false;
                 }
             }
@@ -386,13 +417,13 @@ public class Quoridor {
 
             // get the user's preferred orientation
             if (allValidWalls.get(1).size() == 0) {
-                System.out.print("You can only place a horizontal wall. Continue (Y/N)? > ");
-                if (inputOneChar() == 'Y') vertical = 0;
+                if (validateInput("You can only place a horizontal wall. Continue (Y/N)? > ", yesNo) == 'Y')
+                    vertical = 0;
                 else quit = true;
             }
             if (allValidWalls.get(0).size() == 0) {
-                System.out.print("You can only place a vertical wall. Continue (Y/N)? > ");
-                if (inputOneChar() == 'Y') vertical = 1;
+                if (validateInput("You can only place a vertical wall. Continue (Y/N)? > ", yesNo) == 'Y')
+                    vertical = 1;
                 else quit = true;
             }
             if (allValidWalls.get(1).size() > 0 && allValidWalls.get(0).size() > 0 && !quit) {
@@ -731,8 +762,8 @@ public class Quoridor {
                         if (!file.equals("Q")) menuSuccess = true;
                         break;
                     case 'F':
-                        System.out.print("Are you sure you want to forfeit (Y/N) ? > ");
-                        if (inputOneChar() == 'Y') menuSuccess = true;
+                        if (validateInput("Are you sure you want to forfeit (Y/N) ? > ", yesNo) == 'Y')
+                            menuSuccess = true;
                         break;
                     default:
                         System.out.println("**ERR: Please select a valid option.*\n");
@@ -777,7 +808,7 @@ public class Quoridor {
 
             // get the move from the computer
             System.out.print("\nThinking...");
-            int[] move = p2Agent.getAction(board.getCurrentPawn(), board);
+            int[] move = p2Agent.getAction(board);
 
             // check if the move is a wall or a pawn
             if (move[0] == 0) {
@@ -797,7 +828,7 @@ public class Quoridor {
             } else {
                 // place the wall
                 if (board.placeWall(board.getCurrentPawn(), new int[]{move[1], move[2]}, move[3] == 1)) {
-                    System.out.println("\nThe computer has placed a " + (move[3] == 1 ? " vertical" : " horizontal") + " wall at " + posArrToStr(new int[]{move[1], move[2]}));
+                    System.out.println("\nThe computer has placed a " + (move[3] == 1 ? "vertical" : "horizontal") + " wall at " + posArrToStr(new int[]{move[1], move[2]}));
 
                     // speedbump for the user
                     System.out.print("Press [ENTER] to continue > ");
@@ -840,8 +871,12 @@ public class Quoridor {
         String file;
         char choice = ' ';
 
+        // deserialize from file
+        System.out.println("Deserializing transpositions...");
+        Agent.deserializeTranspositions(TRANSPOSITIONS_PATH);
+
         // output main menu
-        System.out.println("\n  ___                   _     _            \n" +
+        System.out.println("  ___                   _     _            \n" +
                 " / _ \\ _   _  ___  _ __(_) __| | ___  _ __ \n" +
                 "| | | | | | |/ _ \\| '__| |/ _` |/ _ \\| '__|\n" +
                 "| |_| | |_| | (_) | |  | | (_| | (_) | |   \n" +
@@ -849,28 +884,26 @@ public class Quoridor {
 
         while (!abort) {
             // switch statement for menu selection: keep looping until the board is instantiated
-            while (board == null) {
+            while (board == null && !abort) {
                 switch (mainMenu()) {
                     case 'N':
                         // ask for user confirmation to play against computer
-                        System.out.print("Do you want to play against a computer (Y/N)? > ");
-
-                        if (inputOneChar() == 'Y') {
+                        if (validateInput("Do you want to play against a computer (Y/N)? > ", yesNo) == 'Y') {
                             board = new Board(false);
 
                             // output menu for the difficulty of the computer
                             System.out.println("\n----- Select a Difficulty -----\n");
 
-                            System.out.println("{     <E>asy                  }");
+                            System.out.println("{     <N>ormal                }");
                             System.out.println("{     <H>ard                  }");
 
                             System.out.println("\n-------------------------------\n");
 
-                            choice = validateInput(new HashSet<Character>(Arrays.asList('E', 'H')));
+                            choice = validateInput(new HashSet<Character>(Arrays.asList('N', 'H')));
                         }
                         else board = new Board(true);
 
-                        p2Agent = board.getP2().isHuman() ? null : new Agent(choice == 'E' ? 0 : 1);
+                        p2Agent = board.getP2().isHuman() ? null : new Agent(choice == 'N' ? 0 : 1);
 
                         break;
                     case 'L':
@@ -909,7 +942,6 @@ public class Quoridor {
                         sc.nextLine();
                         break;
                     case 'Q':
-                        System.out.println("user selected quit");
                         abort = true;
                         break;
                 }
@@ -966,5 +998,9 @@ public class Quoridor {
                 }
             }
         }
+
+        // serialize to file
+        System.out.println("Serializing tranpositions...");
+        Agent.serializeTranspositions(TRANSPOSITIONS_PATH);
     }
 }
