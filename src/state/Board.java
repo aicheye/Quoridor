@@ -248,7 +248,7 @@ public class Board implements Serializable {
         // declare constants
         final Map<String, String> markings = new HashMap<String, String>();
         markings.put("columns", "   a   b   c   d   e   f   g   h   i");
-        markings.put("horiz-border", " –––––––––––––––––––––––––––––––––––––");
+        markings.put("horiz-border", " -------------------------------------");
 
         // declare variables
         char[][] display = new char[SIZE * 2 - 1][SIZE * 4 - 3];
@@ -287,7 +287,7 @@ public class Board implements Serializable {
             }
             else {
                 for (int i=0; i<5; i++) {
-                    display[(w.getY() - 1) * 2 + 1][w.getX() * 4 + i] = '–';
+                    display[(w.getY() - 1) * 2 + 1][w.getX() * 4 + i] = '-';
                 }
             }
         }

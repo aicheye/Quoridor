@@ -52,6 +52,8 @@ public class Agent {
             transpositionsEvals = (Map<Board, Integer>) obj1;
             transpositionsChildren = (Map<Board, List<List<Integer>>>) obj2;
 
+            System.out.println(transpositionsEvals.size() + transpositionsChildren.size() + " transpositions successfully loaded.\n");
+
             // close the streams
             ois.close();
             fis.close();
@@ -269,16 +271,6 @@ public class Agent {
             evalActionPair = new int[]{eval(maximizingPlayer, position), action[0], action[1], action[2], action[3]};
         }
 
-        // if the game is over and the player is the maximizing player, return an evaluation of infinity
-        else if (position.getCurrentPlayer() == maximizingPlayer && position.isGameOver()) {
-            evalActionPair = new int[]{Integer.MAX_VALUE, action[0], action[1], action[2], action[3]};
-        }
-
-        // if the game is over and the player is the minimizing player, return an evaluation of negative infinity
-        else if (position.getCurrentPlayer() != maximizingPlayer && position.isGameOver()) {
-            evalActionPair = new int[]{Integer.MIN_VALUE, action[0], action[1], action[2], action[3]};
-        }
-
         // if the current player is the maximizing player, find the move with the maximum evaluation using recursion
         else if (position.getCurrentPlayer() == maximizingPlayer) {
             // loop over each possible move from the current position
@@ -290,8 +282,17 @@ public class Agent {
                     // execute the action
                     position.doAction(actionChild);
 
+                    // check if the maximizing player wins immediately on this turn
+                    if (position.getPawn(maximizingPlayer).getY() ==
+                            position.getPawn(maximizingPlayer).getYGoal()) {
+                        visited.add(position);
+
+                        maxEval = Integer.MAX_VALUE;
+                        evalActionPair = new int[]{Integer.MAX_VALUE, actionChild[0], actionChild[1], actionChild[2], actionChild[3]};
+                    }
+
                     // if the position has not been visited
-                    if (!visited.contains(position)) {
+                    else if (!visited.contains(position)) {
                         visited.add(position);
 
                         evalActionPairChild = minimax(
@@ -342,8 +343,17 @@ public class Agent {
                     // execute the action
                     position.doAction(actionChild);
 
+                    // check if the minimizing player wins immediately on this turn
+                    if (position.getEnemy(position.getPawn(maximizingPlayer)).getY() ==
+                            position.getEnemy(position.getPawn(maximizingPlayer)).getYGoal()) {
+                        visited.add(position);
+
+                        minEval = Integer.MIN_VALUE;
+                        evalActionPair = new int[]{Integer.MIN_VALUE, actionChild[0], actionChild[1], actionChild[2], actionChild[3]};
+                    }
+
                     // if the position has not been visited
-                    if (!visited.contains(position)) {
+                    else if (!visited.contains(position)) {
                         visited.add(position);
 
                         // recursively call the minimax function with the temporary board

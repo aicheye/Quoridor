@@ -4,13 +4,13 @@ X e8: Computer (difficulty: normal)
 10 {O: 4 , X: 6 }:
 | e4: X
 | d2: X
-– d4: X
-– b4: X
+- d4: X
+- b4: X
 | e8: O
-– d7: O
-– f4: X
+- d7: O
+- f4: X
 | e6: O
 | c3: X
-– a6: O
+- a6: O
 
 Next Move: O

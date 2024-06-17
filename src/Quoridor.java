@@ -487,7 +487,7 @@ public class Quoridor {
         // regex strings
         final String PLAYERS_REGEX = "^[OX]\\s[a-i][1-9]:\\s((Human)|(Computer \\(difficulty: ((normal)|(hard))\\)))$";
         final String WALLS_REGEX = "^([0-9]|(1[0-9])|(20))\\s\\{O:\\s([0-9]|(10))\\s,\\sX:\\s([0-9]|(10))\\s}:$";
-        final String WALL_REGEX = "^[|–]\\s[a-i][1-9]:\\s[OX]$";
+        final String WALL_REGEX = "^[|-]\\s[a-i][1-9]:\\s[OX]$";
 
         // declare variables
         boolean valid = true;
@@ -696,7 +696,7 @@ public class Quoridor {
 
             // write each wall
             for (Wall w : board.getAllWalls()) {
-                bw.write(w.isVertical() ? "| " : "– ");
+                bw.write(w.isVertical() ? "| " : "- ");
                 bw.write(posArrToStr(w.getPos()));
                 bw.write(": ");
                 bw.write(w.getOwner() == 1 ? "O\n" : "X\n");
@@ -987,12 +987,22 @@ public class Quoridor {
                                 " \\ V / _ \\| | | |  \\ \\ /\\ / /| | '_ \\| |\n" +
                                 "  | | (_) | |_| |   \\ V  V / | | | | |_|\n" +
                                 "  |_|\\___/ \\__,_|    \\_/\\_/  |_|_| |_(_)\n");
+                        if (p2Agent.getDiff() == 0) {
+                            System.out.println("You won! But remember, the machines are learning...");
+                        } else {
+                            System.out.println("You did the impossible! CONGRATULATIONS!");
+                        }
                     } else if (winner == 2) {
                         System.out.println("\n__   __            _                         \n" +
                                 "\\ \\ / /__  _   _  | |    ___  ___  ___       \n" +
                                 " \\ V / _ \\| | | | | |   / _ \\/ __|/ _ \\      \n" +
                                 "  | | (_) | |_| | | |__| (_) \\__ \\  __/_ _ _ \n" +
                                 "  |_|\\___/ \\__,_| |_____\\___/|___/\\___(_|_|_)\n");
+                        if (p2Agent.getDiff() == 0) {
+                            System.out.println("It's rise of the machines all over again!");
+                        } else {
+                            System.out.println("You never had a chance anyway :(");
+                        }
                     }
                 }
 
