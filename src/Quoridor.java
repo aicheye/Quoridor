@@ -142,6 +142,47 @@ public class Quoridor {
     }
 
     /**
+     * newMenu method
+     * <p>
+     * Outputs the new game menu
+     *
+     * @return {@code int} - The difficulty of the computer
+     */
+    private static int newMenu() {
+        // declare variables
+        char choice;
+        int agentDiff = -1;
+        boolean quit = false;
+
+        // ask for user confirmation to play against computer
+        if (validateInput("Do you want to play against a computer (Y/N)? > ", yesNo) == 'Y') {
+            // loop until the user selects a difficulty or quits
+            while (agentDiff == -1 && !quit) {
+                // output menu for the difficulty of the computer
+                System.out.println("\n----- Select a Difficulty -----\n");
+
+                System.out.println("{     <N>ormal                }");
+                System.out.println("{     <H>ard                  }");
+                System.out.println("{     <Q>uit                  }");
+
+                System.out.println("\n-------------------------------\n");
+
+                // get the user's choice
+                choice = validateInput(new HashSet<Character>(Arrays.asList('N', 'H', 'Q')));
+
+                // quit the loop
+                if (choice == 'Q') quit = true;
+
+                    // set the agent difficulty
+                else agentDiff = choice == 'N' ? 0 : 1;
+            }
+
+            if (agentDiff != -1) board = new Board(false);
+        } else board = new Board(true);
+        return agentDiff;
+    }
+
+    /**
      * loadMenu method
      * <p>
      * Outputs the load game menu
@@ -311,7 +352,7 @@ public class Quoridor {
         System.out.println(  "{     <M>ove your pawn                }");
         System.out.println(  "{     <P>lace a wall                  }");
         System.out.println(  "{     <F>orfeit                       }");
-        System.out.println(  "{     <S>ve game and exit             }");
+        System.out.println("{     <S>ave game and exit            }");
 
         System.out.println("\n---------------------------------------\n");
 
@@ -807,11 +848,10 @@ public class Quoridor {
         // computer's move
         else {
             // output display
-            System.out.println("\n    _______  _______   _______   ________  ________  ________   _______   _______ \n" +
-                    "  //       \\/       \\\\/       \\\\/        \\/    /   \\/        \\//       \\//       \\\n" +
-                    " //        /        //        //         /         /        _//        //        /\n" +
-                    "/       --/         /         //      __/        ///       //        _/        _/ \n" +
-                    "\\________/\\________/\\__/__/__/\\\\_____/  \\_______// \\_____// \\________/\\____/___/ ");
+            System.out.println("\n  __|                          |             \n" +
+                    " (      _ \\   ` \\   _ \\  |  |   _|   -_)   _|\n" +
+                    "\\___| \\___/ _|_|_| .__/ \\_,_| \\__| \\___| _|  \n" +
+                    "                  _|                         ");
 
             // get the move from the computer
             System.out.print("\nThinking...");
@@ -877,14 +917,14 @@ public class Quoridor {
         final String TRANSPOSITIONS_PATH = "./transpositions.ser";
         int winner;
         String file;
-        char choice = ' ';
+        int agentDiff;
 
         // deserialize from file
         System.out.print("Deserializing transpositions...");
         Agent.deserializeTranspositions(TRANSPOSITIONS_PATH);
 
         // output main menu
-        System.out.println("  ___                   _     _            \n" +
+        System.out.println("\n\n  ___                   _     _            \n" +
                 " / _ \\ _   _  ___  _ __(_) __| | ___  _ __ \n" +
                 "| | | | | | |/ _ \\| '__| |/ _` |/ _ \\| '__|\n" +
                 "| |_| | |_| | (_) | |  | | (_| | (_) | |   \n" +
@@ -895,24 +935,8 @@ public class Quoridor {
             while (board == null && !abort) {
                 switch (mainMenu()) {
                     case 'N':
-                        // ask for user confirmation to play against computer
-                        if (validateInput("Do you want to play against a computer (Y/N)? > ", yesNo) == 'Y') {
-                            board = new Board(false);
-
-                            // output menu for the difficulty of the computer
-                            System.out.println("\n----- Select a Difficulty -----\n");
-
-                            System.out.println("{     <N>ormal                }");
-                            System.out.println("{     <H>ard                  }");
-
-                            System.out.println("\n-------------------------------\n");
-
-                            choice = validateInput(new HashSet<Character>(Arrays.asList('N', 'H')));
-                        }
-                        else board = new Board(true);
-
-                        p2Agent = board.getP2().isHuman() ? null : new Agent(choice == 'N' ? 0 : 1);
-
+                        agentDiff = newMenu();
+                        p2Agent = agentDiff == -1 ? null : new Agent(agentDiff);
                         break;
                     case 'L':
                         file = loadMenu(true);
@@ -939,6 +963,11 @@ public class Quoridor {
                         System.out.println("{    place a wall anywhere that is not    }");
                         System.out.println("{    occupied, but there must always be   }");
                         System.out.println("{    a valid path to the other side.      }");
+                        System.out.println("{                                         }");
+                        System.out.println("{    Walls block two squares each. A      }");
+                        System.out.println("{    wall placement is specified using    }");
+                        System.out.println("{    the upper-left (NW) square which     }");
+                        System.out.println("{    the wall blocks.                     }");
                         System.out.println("{                                         }");
                         System.out.println("{    Try loading the exampleSave to see   }");
                         System.out.println("{    an example of a game.                }");

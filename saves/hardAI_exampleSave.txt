@@ -1,13 +1,11 @@
 O f7: Human
 X f4: Computer (difficulty: hard)
 
-16 {O: 7 , X: 9 }:
+14 {O: 7 , X: 7 }:
 - c9: X
 | h8: X
 | f7: X
 - a9: X
-| c6: X
-| f9: X
 - g2: O
 - e2: O
 - g4: O

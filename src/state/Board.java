@@ -554,17 +554,6 @@ public class Board implements Serializable {
     }
 
     /**
-     * isGameOver method
-     * <p>
-     * Checks if a game is over
-     *
-     * @return {@code boolean} - If the game is over
-     */
-    public boolean isGameOver() {
-        return p1.getY() == p1.getYGoal() || p2.getY() == p2.getYGoal();
-    }
-
-    /**
      * validatePawnMove method
      * <p>
      * Checks if a pawn move is valid
@@ -847,6 +836,7 @@ public class Board implements Serializable {
             for (int j = 1; j < SIZE; j++) {
                 wall = new Wall(self.getId(), new int[]{i, j}, true);
                 if (validateWallPlace(self, new int[]{i, j}, true)) validWalls.add(wall);
+
                 wall = new Wall(self.getId(), new int[]{i, j}, false);
                 if (validateWallPlace(self, new int[]{i, j}, false)) validWalls.add(wall);
             }
