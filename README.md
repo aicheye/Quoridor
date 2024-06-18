@@ -30,7 +30,7 @@ The objective of Quoridor is to be the first player to move your pawn to the opp
 2. Each player starts with a it in the center space of their starting edge (the middle space on their side of the board).
 3. Each player gets 10 fences.
 
-## Game Play
+## Gameplay
 ### Players and Turns
 - The game is played 2 players.
 - Players alternate taking turns.
@@ -82,11 +82,10 @@ Unfortunately, the minimax algorithm takes too long (>30s) to evaluate a move pa
 This version at depth 3 still remarkably better and faster than the first iterations of the algorithm at depth 2 due to heuristic ordering improvements, move caching, and alpha-beta pruning as mentioned above.
 
 # Gallery
-![image](https://github.com/aicheye/Quoridor/assets/55955758/7c94ba7e-96f6-492b-979c-610ab183db17)
-![image](https://github.com/aicheye/Quoridor/assets/55955758/b0103810-e8e2-4fd2-ad0a-cd53ff85d835)
-![image](https://github.com/aicheye/Quoridor/assets/55955758/87c8fd42-ab87-4491-98be-08e080cd628a)
-![image](https://github.com/aicheye/Quoridor/assets/55955758/21586314-8008-4d2f-a86e-b44e16e5dcc4)
-
+![image](https://github.com/aicheye/Quoridor/assets/55955758/164ccdd1-816e-4cd3-b896-a3e085186b91)
+![image](https://github.com/aicheye/Quoridor/assets/55955758/6b987950-8808-4d67-9ef9-f8d736228b02)
+![image](https://github.com/aicheye/Quoridor/assets/55955758/37e4e521-a3d5-43a0-81f1-32216eeb3449)
+![image](https://github.com/aicheye/Quoridor/assets/55955758/dab837aa-2312-4467-89d7-62d42379e097)
 
 # See Also
 - https://en.wikipedia.org/wiki/Quoridor
