@@ -458,13 +458,13 @@ public class Board implements Serializable {
     }
 
     /**
-     * propogateSquares method
+     * propagateSquares method
      * <p>
-     * Calculates the optimal path to the goal
+     * Propagates squares using heuristics to determine the best wall placements
      *
      * @param self {@code state.component.Pawn} - The pawn to calculate
      */
-    public List<List<Integer>> propogateSquares(Pawn self) {
+    public List<List<Integer>> propagateSquares(Pawn self) {
         // declare variables
         int[][] dijkstra = new int[SIZE][SIZE];
         List<List<Integer>> queue = new ArrayList<List<Integer>>();
@@ -477,29 +477,37 @@ public class Board implements Serializable {
         dirs.add('W');
         int[] nextPos = new int[2];
         List<Integer> nextPosList;
+        int goalBlockingY;
+
+        // set the goal blocking y value
+        if (self.getId() == 1) goalBlockingY = getEnemy(self).getYGoal() + 1;
+        else goalBlockingY = getEnemy(self).getYGoal();
 
         // initialize priority queue
-        MinHeap pq = new MinHeap(81);
+        MinHeap pq = new MinHeap(64);
 
         // stores an ArrayList of every square in the board ordered by distance from the goal
-        List<List<Integer>> propogation = new ArrayList<List<Integer>>();
+        List<List<Integer>> propagation = new ArrayList<List<Integer>>();
 
         // initialize every square to infinity and initialize ArrayLists
         for (int i = 0; i < SIZE; i++) {
             for (int j = 0; j < SIZE; j++) {
-                dijkstra[i][j] = Integer.MAX_VALUE;
+                // initialize the squares which place walls to block the goal row to 0
+                if (i < SIZE - 1 && j == goalBlockingY) {
+                    dijkstra[i][j] = 0;
+
+                    // add this square to the queue
+                    nextPosList = new ArrayList<Integer>();
+                    nextPosList.add(i);
+                    nextPosList.add(j);
+
+                    queue.add(nextPosList);
+                }
+
+                // otherwise set it to Integer.MAX_VALUE
+                else dijkstra[i][j] = Integer.MAX_VALUE;
             }
         }
-
-        // initialize the starting square to 0
-        dijkstra[self.getX()][self.getY()] = 0;
-
-        // add the starting square to the queue
-        nextPosList = new ArrayList<Integer>();
-        nextPosList.add(self.getX());
-        nextPosList.add(self.getY());
-
-        queue.add(nextPosList);
 
         // keep looping until the queue is empty
         while (!queue.isEmpty()) {
@@ -521,6 +529,7 @@ public class Board implements Serializable {
                 if (validatePawnPos(nextPos) &&
                         !isAnyWallBlocking(new int[]{curr.get(0), curr.get(1)}, dir) &&
                         !visited.contains(nextPosList)) {
+                    // add the next position to the queue
                     queue.add(nextPosList);
 
                     // set the distance to the new square to the distance to the current square + 1 (if it is lower)
@@ -529,28 +538,31 @@ public class Board implements Serializable {
             }
         }
 
-        // propogate the dijkstra array into the priority queue
-        for (int i = 0; i < SIZE; i++) {
-            for (int j = 0; j < SIZE; j++) {
+        // propagate the dijkstra array into the priority queue for valid wall squares
+        for (int i = 0; i < SIZE - 1; i++) {
+            for (int j = 1; j < SIZE; j++) {
                 pq.insert(new int[]{i, j}, dijkstra[i][j]);
             }
         }
 
-        // extract from priority queue into propogation
+        // extract first the position
+        nextPos = pq.extract();
+
+        // extract from priority queue into propagation
         while (!Arrays.equals(nextPos, new int[]{-1, -1})) {
-            // add the next position to the propogation
+            // add the next position to the propagation
             nextPosList = new ArrayList<Integer>();
             nextPosList.add(nextPos[0]);
             nextPosList.add(nextPos[1]);
 
-            // add the next position to the propogation
-            propogation.add(nextPosList);
+            // add the next position to the propagation
+            propagation.add(nextPosList);
 
             // extract the next position
             nextPos = pq.extract();
         }
 
-        return propogation;
+        return propagation;
     }
 
     /**
@@ -872,17 +884,14 @@ public class Board implements Serializable {
     /**
      * placeWallTemp method
      * <p>
-     * Places a wall without modifying wallsRemaining
+     * Places a wall without modifying wallsRemaining and does not check if it is a valid wall placement
      *
      * @param owner {@code state.component.Pawn} - The owner of the wall
      * @param pos {@code int[]} - The position of the wall
      * @param vertical {@code boolean} - Whether the wall is vertical
      */
     public void placeWallTemp(Pawn owner, int[] pos, boolean vertical) {
-        // check if the new position is a valid move
-        if (validateWallPlace(owner, pos, vertical)) {
-            walls.add(new Wall(owner.getId(), pos, vertical));
-        }
+        walls.add(new Wall(owner.getId(), pos, vertical));
     }
 
     /**

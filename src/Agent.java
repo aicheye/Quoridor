@@ -16,7 +16,7 @@ import java.util.*;
 public class Agent {
     // declare local variables
     private final int diff;
-    private static Map<Board, List<Integer>> transpositionOptimals;
+    private static Map<Board, List<Integer>> transpositionsOptimals;
     private static Map<Board, Integer> transpositionsEvals;
     private static Map<Board, List<List<Integer>>> transpositionsChildren = new HashMap<Board, List<List<Integer>>>();
     private int searchDepth = 3;
@@ -42,21 +42,41 @@ public class Agent {
      */
     public static void deserializeTranspositions(String path) {
         try {
-            // declare variables
-            FileInputStream fis = new FileInputStream(path);
+            // declare variables and open new streams for optimals
+            FileInputStream fis = new FileInputStream(path + "optimals.ser");
             ObjectInputStream ois = new ObjectInputStream(fis);
-            Object obj1, obj2;
+            Object obj = ois.readObject(); // read the object
 
-            // read the objects
-            obj1 = ois.readObject();
-            obj2 = ois.readObject();
+            transpositionsOptimals = (Map<Board, List<Integer>>) obj; // cast the object
 
-            transpositionOptimals = (Map<Board, List<Integer>>) obj1;
-            transpositionsEvals = (Map<Board, Integer>) obj1;
-            transpositionsChildren = (Map<Board, List<List<Integer>>>) obj2;
+            // close the streams
+            ois.close();
+            fis.close();
+
+            // open new streams for evaluations
+            fis = new FileInputStream(path + "evals.ser");
+            ois = new ObjectInputStream(fis);
+            obj = ois.readObject(); // read the object
+
+            transpositionsEvals = (Map<Board, Integer>) obj; // cast the object
+
+            // close the streams
+            ois.close();
+            fis.close();
+
+            // open new streams for children
+            fis = new FileInputStream(path + "children.ser");
+            ois = new ObjectInputStream(fis);
+            obj = ois.readObject(); // read the object
+
+            transpositionsChildren = (Map<Board, List<List<Integer>>>) obj; // cast the object
+
+            // close the streams
+            ois.close();
+            fis.close();
 
             System.out.printf("\n%d transpositions successfully loaded.\n",
-                    transpositionOptimals.size() + transpositionsEvals.size() + transpositionsChildren.size());
+                    transpositionsOptimals.size() + transpositionsEvals.size() + transpositionsChildren.size());
 
             // close the streams
             ois.close();
@@ -64,7 +84,9 @@ public class Agent {
         }
         // catch exceptions
         catch (IOException | ClassNotFoundException | ClassCastException e) {
-            transpositionOptimals = new HashMap<Board, List<Integer>>();
+            System.out.println("\n**ERR: Unknown issue occured while loading transpositions. Generating new tables...**");
+
+            transpositionsOptimals = new HashMap<Board, List<Integer>>();
             transpositionsEvals = new HashMap<Board, Integer>();
             transpositionsChildren = new HashMap<Board, List<List<Integer>>>();
         }
@@ -79,14 +101,35 @@ public class Agent {
      */
     public static void serializeTranspositions(String path) {
         try {
-            // declare variables
-            FileOutputStream fos = new FileOutputStream(path);
+            // declare variables and open new streams
+            FileOutputStream fos = new FileOutputStream(path + "optimals.ser");
             ObjectOutputStream oos = new ObjectOutputStream(fos);
 
-            // write the objects
-            oos.writeObject(transpositionOptimals);
-            oos.writeObject(transpositionsEvals);
-            oos.writeObject(transpositionsChildren);
+            oos.writeObject(transpositionsOptimals); // write the optimal transpositions to disk
+
+            // flush and close the streams
+            oos.flush();
+            fos.flush();
+            oos.close();
+            fos.close();
+
+            // open new streams
+            fos = new FileOutputStream(path + "evals.ser");
+            oos = new ObjectOutputStream(fos);
+
+            oos.writeObject(transpositionsEvals); // write the evaluations to disk
+
+            // flush and close the streams
+            oos.flush();
+            fos.flush();
+            oos.close();
+            fos.close();
+
+            // declare variables and open new streams
+            fos = new FileOutputStream(path + "children.ser");
+            oos = new ObjectOutputStream(fos);
+
+            oos.writeObject(transpositionsChildren); // write the children to disk
 
             // flush and close the streams
             oos.flush();
@@ -244,7 +287,9 @@ public class Agent {
     /**
      * calcSearchDepth
      * <p>
-     * Calculates the search depth for the minimax algorithm
+     * Calculates the search depth for the minimax algorithm based on two (arbitrary) factors:
+     * 1. The number of walls remaining
+     * 2. The distance of both pawnsto the goal
      *
      * @param board {@code state.Board} - The current state of the board
      * @return {@code int} - The search depth
@@ -252,13 +297,19 @@ public class Agent {
     private int calcSearchDepth(Board board) {
         // declare variables
         int wallsRemaining = board.getWallsRemaining(board.getCurrentPawn());
+        wallsRemaining += board.getWallsRemaining(board.getEnemy(board.getCurrentPawn()));
         int searchDepth;
 
         // calculate the search depth
-        if (wallsRemaining == 0) searchDepth = 10;
-        else if (wallsRemaining == 1) searchDepth = 5;
-        else if (wallsRemaining <= 3) searchDepth = 4;
-        else searchDepth = 3;
+        if (wallsRemaining == 1 ||
+                board.calcDistanceToGoal(board.getCurrentPawn()) <= 2 &&
+                        board.calcDistanceToGoal(board.getEnemy(board.getCurrentPawn())) <= 2)
+            searchDepth = 5;
+        else if (board.calcDistanceToGoal(board.getCurrentPawn()) <= 4 &&
+                board.calcDistanceToGoal(board.getEnemy(board.getCurrentPawn())) <= 4)
+            searchDepth = 4;
+        else
+            searchDepth = 3;
 
         return searchDepth;
     }
@@ -267,7 +318,7 @@ public class Agent {
      * getActionHard method
      * <p>
      * Returns the move that the computer will make (hard)
-     * Implements the minimax algorithm with a depth of 3 (with a-b pruning)
+     * Implements the minimax algorithm (variable search depth of 3-5, with a-b pruning)
      *
      * @param board {@code state.Board} - The current state of the board
      * @return {@code int[]} - The move that the computer will make
@@ -282,31 +333,46 @@ public class Agent {
         List<Integer> actionList;
 
         // check if this position has already been calculated
-        if (transpositionOptimals.get(board) != null) {
-            actionList = transpositionOptimals.get(board);
+        if (transpositionsOptimals.get(board) != null) {
+            actionList = transpositionsOptimals.get(board);
             // convert the list to an array
             action = new int[]{actionList.get(0), actionList.get(1), actionList.get(2), actionList.get(3)};
-        } else {
-            // evaluate the move using the minimax algorithm
-            System.out.print(" This may take a while...");
-            algoEval = minimax(
-                    self.getId(),
-                    board,
-                    SEARCH_DEPTH - 1,
-                    Integer.MIN_VALUE,
-                    Integer.MAX_VALUE,
-                    new HashSet<Board>(),
-                    null
-            );
+        }
 
-            // decode the action
-            action = new int[]{algoEval[1], algoEval[2], algoEval[3], algoEval[4]};
+        // if the position has not been calculated, calculate it
+        else {
+            // check if the search depth is valid
+            if (searchDepth > 0) {
+                // evaluate the move using the minimax algorithm
+                System.out.printf(" This may take a while (depth=%d)...", SEARCH_DEPTH);
+                algoEval = minimax(
+                        self.getId(),
+                        board,
+                        SEARCH_DEPTH - 1,
+                        Integer.MIN_VALUE,
+                        Integer.MAX_VALUE,
+                        new HashSet<Board>(),
+                        null
+                );
 
-            // if the minimax algorithm cannot make a move, revert to the normal computer
-            if (Arrays.equals(action, new int[]{0, 0, 0, 0})) action = getActionNormal(board);
+                // decode the action
+                action = new int[]{algoEval[1], algoEval[2], algoEval[3], algoEval[4]};
+
+                // if the minimax algorithm cannot make a move, revert to the normal computer
+                if (Arrays.equals(action, new int[]{0, 0, 0, 0})) {
+                    System.out.print("Error in minimax algorithm. Reverting to normal computer...");
+                    action = getActionNormal(board);
+                }
+            }
+
+            // if it is not valid, revert to the normal computer
+            else {
+                System.out.print("Error in minimax algorithm. Reverting to normal computer...");
+                action = getActionNormal(board);
+            }
 
             // put the optimal move in the transposition map
-            transpositionOptimals.put(
+            transpositionsOptimals.put(
                     board.copy(),
                     Arrays.asList(action[0], action[1], action[2], action[3])
             );
@@ -330,6 +396,7 @@ public class Agent {
      */
     private int[] minimax(int maximizingPlayer, Board position, int depth, int alpha, int beta, Set<Board> visited, int[] action) {
         // declare variables
+        final int DOT_INTERVAL = (int) (50 * (Math.pow(2, searchDepth - 2)));
         int[] evalActionPair = new int[5];
         int[] evalActionPairChild;
         int maxEval = Integer.MIN_VALUE;
@@ -337,7 +404,7 @@ public class Agent {
         boolean alphaBetaPruned = false;
 
         // output a dot to indicate progress
-        if (++callCounter % Math.pow(10, searchDepth - 1) == 0) System.out.print(".");
+        if (++callCounter % DOT_INTERVAL == 0) System.out.print(".");
 
         // if the depth is 0, return the evaluation of the current position
         if (depth == 0) {
@@ -511,6 +578,7 @@ public class Agent {
      */
     private List<List<Integer>> getChildren(Board position) {
         // declare variables
+        final int PAWNMOVE_HEURISTIC_LOC = 16; // heuristic location for pawn moves (arbitrary)
         List<List<Integer>> children;
         int[] action;
         List<Integer> actionColl;
@@ -519,9 +587,10 @@ public class Agent {
         if (transpositionsChildren.get(position) == null) {
             // initialize a new ArrayList
             children = new ArrayList<List<Integer>>();
+            boolean pawnMovesCalculated = false;
 
             // loop over every wall placement
-            for (List<Integer> pos : position.propogateSquares(position.getCurrentPawn())) {
+            for (List<Integer> pos : position.propagateSquares(position.getCurrentPawn())) {
                 // initialize a vertical and horizontal wall object at this position and check if it is valid
                 if (position.validateWallPlace(position.getCurrentPawn(), new int[]{pos.get(0), pos.get(1)}, true)) {
                     // encode it and add it to the list of children
@@ -546,19 +615,38 @@ public class Agent {
 
                     children.add(actionColl);
                 }
+
+                // if the size of the children is greater than the pawn heuristic, calculate the pawn moves
+                if (children.size() >= PAWNMOVE_HEURISTIC_LOC && !pawnMovesCalculated) {
+                    for (List<Integer> move : position.calcValidPawnMoves(position.getCurrentPawn())) {
+                        // encode it and add it to the list of children
+                        action = encodeAction(new int[]{move.get(0), move.get(1)});
+                        actionColl = new ArrayList<Integer>();
+                        actionColl.add(action[0]);
+                        actionColl.add(action[1]);
+                        actionColl.add(action[2]);
+                        actionColl.add(action[3]);
+
+                        children.add(actionColl);
+                    }
+
+                    pawnMovesCalculated = true;
+                }
             }
 
-            // loop over every pawn move
-            for (List<Integer> move : position.calcValidPawnMoves(position.getCurrentPawn())) {
-                // encode it and add it to the list of children
-                action = encodeAction(new int[]{move.get(0), move.get(1)});
-                actionColl = new ArrayList<Integer>();
-                actionColl.add(action[0]);
-                actionColl.add(action[1]);
-                actionColl.add(action[2]);
-                actionColl.add(action[3]);
+            // check if the pawn moves hae not yet been calculated
+            if (!pawnMovesCalculated) {
+                for (List<Integer> move : position.calcValidPawnMoves(position.getCurrentPawn())) {
+                    // encode it and add it to the list of children
+                    action = encodeAction(new int[]{move.get(0), move.get(1)});
+                    actionColl = new ArrayList<Integer>();
+                    actionColl.add(action[0]);
+                    actionColl.add(action[1]);
+                    actionColl.add(action[2]);
+                    actionColl.add(action[3]);
 
-                children.add(actionColl);
+                    children.add(actionColl);
+                }
             }
 
             transpositionsChildren.put(position.copy(), children);

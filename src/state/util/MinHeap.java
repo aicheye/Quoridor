@@ -9,10 +9,11 @@ package state.util;
  * @version 30/05/2024
  */
 public class MinHeap {
-    int capacity;
-    int[] heap;
-    int[][] positions;
-    int size;
+    // declare fields
+    int capacity; // maximum possible size of the heap
+    int[] heap; // array to store the heap
+    int[][] items; // array to store each heap item
+    int size; // current size of the heap
 
     /**
      * PriorityQueue constructor
@@ -22,11 +23,11 @@ public class MinHeap {
      * @param n {@code int} - The capacity of the priority queue
      */
     public MinHeap(int n) {
-        capacity = n;
-        heap = new int[n];
-        positions = new int[n][2];
-        size = 0;
-        for (int i = 0; i < n; i++) heap[i] = Integer.MAX_VALUE;
+        capacity = n; // set the capacity
+        heap = new int[n]; // initialize the heap array
+        items = new int[n][2]; // initialize the items aray
+        size = 0; // set the size to 0
+        for (int i = 0; i < n; i++) heap[i] = Integer.MAX_VALUE; // set all heap values to max value
     }
 
     /**
@@ -79,21 +80,25 @@ public class MinHeap {
         int[] bar;
         int idx;
 
+        // insert the key and position
         idx = size;
         heap[idx] = K;
-        positions[idx] = pos.clone();
+        items[idx] = pos.clone();
         size++;
 
         // heapify-up:
         while (idx != 0 && K < heap[parent(idx)]) {
+            // swap the current node with its parent
             foo = heap[idx];
             heap[idx] = heap[parent(idx)];
             heap[parent(idx)] = foo;
 
-            bar = positions[idx].clone();
-            positions[idx] = positions[parent(idx)].clone();
-            positions[parent(idx)] = bar.clone();
+            // swap the current position with its parent
+            bar = items[idx].clone();
+            items[idx] = items[parent(idx)].clone();
+            items[parent(idx)] = bar.clone();
 
+            // move up the heap
             idx = parent(idx);
         }
     }
@@ -110,42 +115,58 @@ public class MinHeap {
         int[] root = new int[2];
         int idx = 0;
         int smallest = -1;
+        int foo;
+        int[] bar;
 
+        // return if the heap is empty
         if (size <= 0) {
-            root[0] = -1;
-            root[1] = -1;
-        } else if (size == 1) {
-            size--;
-            root = positions[0].clone();
-        } else {
-            root = positions[0].clone();
+            root = new int[]{-1, -1};
+        }
 
+        // return the root if the heap has only one element
+        else if (size == 1) {
+            // extract the root
+            root = items[0].clone();
+
+            // set the root to max value
+            heap[0] = Integer.MAX_VALUE;
+            items[0] = new int[2];
+
+            size--; // decrement the size
+        } else {
+            // extract the root
+            root = items[0].clone();
+
+            // swap the root with the last element
             heap[0] = heap[size - 1];
             heap[size - 1] = Integer.MAX_VALUE;
 
-            positions[0] = positions[size - 1].clone();
-            positions[size - 1] = new int[2];
+            // swap the root position with the last position
+            items[0] = items[size - 1].clone();
+            items[size - 1] = new int[2];
 
-            size--;
+            size--; // decrement the size
 
             // heapify-down:
             while (smallest != idx) {
+                // find the smallest child
                 smallest = idx;
 
                 if (left(idx) < size && heap[left(idx)] < heap[smallest]) smallest = left(idx);
-
                 if (right(idx) < size && heap[right(idx)] < heap[smallest]) smallest = right(idx);
 
+                // swap the current node with the smallest child
                 if (smallest != idx) {
-                    int foo = heap[idx];
+                    foo = heap[idx];
                     heap[idx] = heap[smallest];
                     heap[smallest] = foo;
 
-                    int[] bar = positions[idx].clone();
-                    positions[idx] = positions[smallest].clone();
-                    positions[smallest] = bar.clone();
+                    bar = items[idx].clone();
+                    items[idx] = items[smallest].clone();
+                    items[smallest] = bar.clone();
 
                     idx = smallest;
+                    smallest = -1;
                 }
             }
         }

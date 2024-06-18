@@ -914,7 +914,7 @@ public class Quoridor {
      */
     public static void main(String[] args) {
         // declare variables
-        final String TRANSPOSITIONS_PATH = "./transpositions.ser";
+        final String TRANSPOSITIONS_PATH = "./transpositions/";
         int winner;
         String file;
         int agentDiff;
@@ -924,7 +924,7 @@ public class Quoridor {
         Agent.deserializeTranspositions(TRANSPOSITIONS_PATH);
 
         // output main menu
-        System.out.println("\n\n  ___                   _     _            \n" +
+        System.out.println("\n  ___                   _     _            \n" +
                 " / _ \\ _   _  ___  _ __(_) __| | ___  _ __ \n" +
                 "| | | | | | |/ _ \\| '__| |/ _` |/ _ \\| '__|\n" +
                 "| |_| | |_| | (_) | |  | | (_| | (_) | |   \n" +
@@ -1047,7 +1047,8 @@ public class Quoridor {
         }
 
         // serialize to file
-        System.out.println("Serializing tranpositions...");
+        System.out.print("Serializing tranpositions...");
         Agent.serializeTranspositions(TRANSPOSITIONS_PATH);
+        System.out.println();
     }
 }

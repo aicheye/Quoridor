@@ -86,6 +86,7 @@ public class Pawn implements Serializable {
      * getX method
      * <p>
      * Returns the x-coordinate of the pawn
+     *
      * @return {@code int} - The x-coordinate of the pawn
      */
     public int getX() {
