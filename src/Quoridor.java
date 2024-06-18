@@ -768,6 +768,7 @@ public class Quoridor {
 
             // check if the game is over
             if (checkWinner() != -1) {
+                board.sysOut();
                 gameEnd = true;
             }
 
