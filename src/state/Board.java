@@ -327,6 +327,7 @@ public class Board implements Serializable {
         // output the column labels and the border
         System.out.println(markings.get("horiz-border"));
         System.out.println(markings.get("columns"));
+        System.out.printf("\nWalls Remaining: {O: %d, X: %d}\n", wallsRemaining[0], wallsRemaining[1]);
     }
 
     /**
@@ -475,7 +476,7 @@ public class Board implements Serializable {
         dirs.add('E');
         dirs.add('S');
         dirs.add('W');
-        int[] nextPos = new int[2];
+        int[] nextPos;
         List<Integer> nextPosList;
         int goalBlockingY;
 

@@ -332,8 +332,13 @@ public class Agent {
         int[] action;
         List<Integer> actionList;
 
+        // check if there are any walls left
+        if (board.getWallsRemaining(self) == 0) {
+            action = beeline(board);
+        }
+
         // check if this position has already been calculated
-        if (transpositionsOptimals.get(board) != null) {
+        else if (transpositionsOptimals.get(board) != null) {
             actionList = transpositionsOptimals.get(board);
             // convert the list to an array
             action = new int[]{actionList.get(0), actionList.get(1), actionList.get(2), actionList.get(3)};
@@ -656,5 +661,45 @@ public class Agent {
         else children = transpositionsChildren.get(position);
 
         return children;
+    }
+
+    /**
+     * beeline method
+     * <p>
+     * Calculates the beeline path from the current position to the goal
+     *
+     * @param board {@code Pawn} - The pawn to calculate the path for
+     * @return {@code int[]} - The next action
+     */
+    private int[] beeline(Board board) {
+        // declare variables
+        Pawn self = board.getCurrentPawn();
+        int currDist = board.calcDistanceToGoal(self);
+        int newDist;
+        int delta;
+        int maxDelta = Integer.MIN_VALUE;
+        int[] old = self.getPos();
+        int[] action = new int[5];
+
+        // loop through every possible pawn move
+        for (List<Integer> move : board.calcValidPawnMoves(self)) {
+            // execute the move
+            self.moveTemp(new int[]{move.get(0), move.get(1)});
+
+            // calculate the distance to the goal
+            newDist = board.calcDistanceToGoal(self);
+            delta = currDist - newDist;
+
+            // if the delta is greater than the maximum delta, update the maximum delta and store the best move
+            if (delta > maxDelta) {
+                maxDelta = delta;
+                action = encodeAction(new int[]{move.get(0), move.get(1)});
+            }
+
+            // revert the move
+            self.moveTemp(old);
+        }
+
+        return action;
     }
 }
